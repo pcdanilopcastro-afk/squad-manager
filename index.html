@@ -304,6 +304,8 @@
 <script>
 // ==================== CONSTANTS ====================
 const ROLES = ['Account','GT','Copy/SM','Designer','Web Designer','Coordenador'];
+const SENIORITY = ['','Junior','Pleno','Senior'];
+const HOURS_BASE = 180; // horas mensais para calculo custo/hora
 const MONTHS_PT = ['Janeiro','Fevereiro','Marco','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const STATUS_LABELS = { active: 'Ativo', negotiation: 'Em negociacao', cancelled: 'Cancelado', expired: 'Vencido' };
 
@@ -393,6 +395,25 @@ function getDefaultData() {
             { id:13, squadId:2, name:'Retibom', fee:4225, status:'active', contractStart:'2025-04', contractEnd:'2026-10', planned:{ 'Account':1.72,'GT':7.5,'Copy/SM':6.98,'Designer':11.4,'Web Designer':0,'Coordenador':7.5 } },
             { id:14, squadId:2, name:'Costa Ferro', fee:5062, status:'active', contractStart:'2025-01', contractEnd:'2026-08', planned:{ 'Account':0.45,'GT':12.5,'Copy/SM':0.3,'Designer':2.6,'Web Designer':0,'Coordenador':12.5 } }
         ],
+        // Team: employee registry
+        team: [
+            { id:1, name:'Danilo', role:'Coordenador', seniority:'', salary:12000 },
+            { id:2, name:'Murilo', role:'Coordenador', seniority:'', salary:12000 },
+            { id:3, name:'Joanita Mello', role:'Account', seniority:'Pleno', salary:5179 },
+            { id:4, name:'Murillo Henrique Lima da Costa', role:'Account', seniority:'Pleno', salary:5497.87 },
+            { id:5, name:'Lucas Piemontez Bueno', role:'Account', seniority:'Senior', salary:5497.87 },
+            { id:6, name:'Eduarda Rumblsperger Guimaraes D\'Oliveira', role:'Copy/SM', seniority:'Junior', salary:4119.50 },
+            { id:7, name:'Paula Schamne', role:'Copy/SM', seniority:'Senior', salary:5720.77 },
+            { id:8, name:'Fernando Melo Lopes de Oliveira', role:'GT', seniority:'Pleno', salary:3500 },
+            { id:9, name:'Conrado Fabricio Ducheiko Araujo', role:'GT', seniority:'Pleno', salary:2800 },
+            { id:10, name:'Bernardo de Souza Godoy', role:'Closer', seniority:'Junior', salary:3500 },
+            { id:11, name:'Rodrigo Armando Vieira', role:'Designer', seniority:'Pleno', salary:8000 },
+            { id:12, name:'Wagner Felipe Zeiyn Marques', role:'Designer', seniority:'Pleno', salary:6486.78 },
+            { id:13, name:'Leandro Steel Baltazar', role:'Designer', seniority:'Pleno', salary:6975 },
+            { id:14, name:'Conrado Rocha Cuccia', role:'Web Designer', seniority:'Pleno', salary:3500 },
+            { id:15, name:'Vanusa Fragoso', role:'Analista financeiro', seniority:'Pleno', salary:5279.50 }
+        ],
+        nextTeamId: 16,
         // Monthly actual hours: { "2026-04": { clientId: { role: hours } } }
         actuals: {},
         nextClientId: 15,
@@ -404,6 +425,19 @@ function loadData() {
     const saved = localStorage.getItem('squad-manager-data-v2');
     DATA = saved ? JSON.parse(saved) : getDefaultData();
     if (!DATA.actuals) DATA.actuals = {};
+    if (!DATA.team) { DATA.team = getDefaultData().team; DATA.nextTeamId = 16; saveData(); }
+}
+
+function getTeamMember(name) {
+    return DATA.team.find(t => t.name === name);
+}
+
+function teamCostPerHour(member) {
+    return member && member.salary > 0 ? member.salary / HOURS_BASE : 0;
+}
+
+function getTeamTotalSalary() {
+    return DATA.team.reduce((s, t) => s + (t.salary || 0), 0);
 }
 
 function saveData() {
@@ -414,7 +448,12 @@ function saveData() {
 function getCost(squadId, role) {
     const sq = DATA.squads.find(s => s.id === squadId);
     const m = sq?.members.find(x => x.role === role);
-    return m ? m.costPerHour : 0;
+    if (!m) return 0;
+    // Try to get cost from team registry (salary / 180)
+    const teamMember = getTeamMember(m.name);
+    if (teamMember && teamMember.salary > 0) return teamCostPerHour(teamMember);
+    // Fallback to squad-defined cost
+    return m.costPerHour || 0;
 }
 
 function getPlanned(client, role) { return client.planned[role] || 0; }
@@ -730,75 +769,144 @@ function renderClients() {
 
 // ---------- TEAM ----------
 function renderTeam() {
-    const allMembers = [];
-    DATA.squads.forEach(sq => {
-        sq.members.forEach((m, idx) => {
-            allMembers.push({ ...m, squadId: sq.id, squadName: sq.name, memberIdx: idx });
-        });
+    const totalSalary = getTeamTotalSalary();
+    const totalMembers = DATA.team.length;
+
+    // Group by role
+    const byRole = {};
+    DATA.team.forEach(t => {
+        if (!byRole[t.role]) byRole[t.role] = [];
+        byRole[t.role].push(t);
     });
-
-    const totalCostMonth = allMembers.reduce((s, m) => {
-        // Estimate: hours used by this role in this squad
-        const hoursUsed = squadTotalByRole(m.squadId, m.role, monthKey());
-        return s + (hoursUsed * m.costPerHour);
-    }, 0);
-
-    const totalMembers = allMembers.filter(m => m.name).length;
 
     document.getElementById('team-content').innerHTML = `
         <div class="info-bar">
             <div class="info-item"><div class="label">Total Colaboradores</div><div class="value">${totalMembers}</div></div>
-            <div class="info-item"><div class="label">Squads</div><div class="value">${DATA.squads.length}</div></div>
-            <div class="info-item"><div class="label">Custo Total Alocado (${monthLabel()})</div><div class="value">${fmt.brl(totalCostMonth)}</div></div>
+            <div class="info-item"><div class="label">Folha Mensal Total</div><div class="value">${fmt.brl(totalSalary)}</div></div>
+            <div class="info-item"><div class="label">Custo/Hora Medio</div><div class="value">${fmt.brl(totalSalary / Math.max(totalMembers,1) / HOURS_BASE)}</div></div>
+            <div class="info-item"><div class="label">Base de Calculo</div><div class="value">${HOURS_BASE}h/mes</div></div>
         </div>
 
-        ${DATA.squads.map(sq => {
-            const members = sq.members;
-            return `
-            <div class="table-container">
-                <div class="table-header">
-                    <h3>${sq.name}</h3>
-                    <span style="font-size:12px;color:var(--text-2)">Clique em qualquer valor para editar</span>
+        <div class="table-container">
+            <div class="table-header">
+                <h3>Cadastro de Colaboradores</h3>
+                <div style="display:flex;gap:8px">
+                    <span style="font-size:12px;color:var(--text-2);align-self:center">Clique para editar</span>
+                    <button class="btn btn-primary" onclick="openModal('add-team')">+ Novo Colaborador</button>
                 </div>
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Funcao</th>
-                                <th>Colaborador</th>
-                                <th class="r">Remuneracao/Hora</th>
-                                <th class="r">Horas Alocadas (${monthLabel()})</th>
-                                <th class="r">Custo Mensal Estimado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${members.map((m, idx) => {
-                                const hoursUsed = squadTotalByRole(sq.id, m.role, monthKey());
-                                const monthlyCost = hoursUsed * m.costPerHour;
-                                return `<tr>
-                                    <td><strong>${m.role}</strong></td>
-                                    <td class="editable" onclick="startEditMemberName(this,${sq.id},${idx})">${m.name || '<span style=color:var(--text-3)>Clique para adicionar</span>'}</td>
-                                    <td class="r editable" onclick="startEditMemberCost(this,${sq.id},${idx})">${fmt.brl(m.costPerHour)}</td>
-                                    <td class="r">${fmt.hrs(hoursUsed)}h</td>
-                                    <td class="r">${fmt.brl(monthlyCost)}</td>
-                                </tr>`;
-                            }).join('')}
-                            <tr class="total-row">
-                                <td colspan="2">Total ${sq.name}</td>
-                                <td class="r">${fmt.brl(members.reduce((s,m) => s + m.costPerHour, 0) / members.length)}/h media</td>
-                                <td class="r">${fmt.hrs(squadTotalHours(sq.id, monthKey()))}h</td>
-                                <td class="r">${fmt.brl(members.reduce((s,m,i) => s + squadTotalByRole(sq.id, m.role, monthKey()) * m.costPerHour, 0))}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>`;
-        }).join('')}
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nome Completo</th>
+                            <th>Funcao</th>
+                            <th>Nivel de Senioridade</th>
+                            <th class="r">Remuneracao Mensal</th>
+                            <th class="r">Custo/Hora</th>
+                            <th class="c">Acoes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${DATA.team.map(t => `<tr>
+                            <td class="editable" onclick="startEditTeamField(this,${t.id},'name')"><strong>${t.name}</strong></td>
+                            <td class="editable" onclick="startEditTeamRole(this,${t.id})">${t.role}</td>
+                            <td class="editable" onclick="startEditTeamSeniority(this,${t.id})">${t.seniority || '<span style=color:var(--text-3)>-</span>'}</td>
+                            <td class="r editable" onclick="startEditTeamField(this,${t.id},'salary')">${fmt.brl(t.salary)}</td>
+                            <td class="r" style="color:var(--text-2)">${fmt.brl(teamCostPerHour(t))}</td>
+                            <td class="c"><button class="btn btn-sm btn-danger" onclick="deleteTeamMember(${t.id})">Excluir</button></td>
+                        </tr>`).join('')}
+                        <tr class="total-row">
+                            <td>TOTAL (${totalMembers} colaboradores)</td>
+                            <td colspan="2"></td>
+                            <td class="r">${fmt.brl(totalSalary)}</td>
+                            <td class="r">${fmt.brl(totalSalary / Math.max(totalMembers,1) / HOURS_BASE)} media</td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Summary by role -->
+        <div class="table-container">
+            <div class="table-header"><h3>Resumo por Funcao</h3></div>
+            <div class="table-wrapper">
+                <table>
+                    <thead><tr><th>Funcao</th><th class="r">Qtd</th><th class="r">Folha Total</th><th class="r">Salario Medio</th><th class="r">Custo/Hora Medio</th></tr></thead>
+                    <tbody>
+                        ${Object.entries(byRole).map(([role, members]) => {
+                            const total = members.reduce((s,m) => s + m.salary, 0);
+                            const avg = total / members.length;
+                            return `<tr><td><strong>${role}</strong></td><td class="r">${members.length}</td><td class="r">${fmt.brl(total)}</td><td class="r">${fmt.brl(avg)}</td><td class="r">${fmt.brl(avg / HOURS_BASE)}</td></tr>`;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
         <div style="padding:16px 20px;background:var(--primary-light);border-radius:10px;font-size:13px;color:var(--primary-dark);margin-top:8px">
-            <strong>Como funciona:</strong> Clique no nome do colaborador para alterar quem ocupa a funcao. Clique na remuneracao/hora para atualizar o valor. As alteracoes refletem automaticamente no CSP e margens de todos os clientes.
+            <strong>Como funciona:</strong> O custo/hora e calculado automaticamente: Remuneracao / ${HOURS_BASE}h. Quando o nome do colaborador aqui coincide com o nome no squad, o CSP usa o custo/hora calculado a partir do salario cadastrado.
         </div>
     `;
+}
+
+// Team inline editing
+function startEditTeamField(td, teamId, field) {
+    if (editingCell) return;
+    editingCell = td;
+    const t = DATA.team.find(x => x.id === teamId);
+    const val = field === 'salary' ? t.salary : t.name;
+    const type = field === 'salary' ? 'number' : 'text';
+    const style = field === 'salary' ? 'width:120px;text-align:right' : 'width:220px';
+    td.innerHTML = `<input type="${type}" ${field==='salary'?'step="0.01" min="0"':''} value="${val}" style="${style}" onblur="finishEditTeamField(this,${teamId},'${field}')" onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this.dataset.cancel='1';this.blur()}">`;
+    td.querySelector('input').focus();
+    td.querySelector('input').select();
+}
+
+function finishEditTeamField(input, teamId, field) {
+    if (input.dataset.cancel === '1') { editingCell = null; render(); return; }
+    const t = DATA.team.find(x => x.id === teamId);
+    if (field === 'salary') t.salary = parseFloat(input.value) || 0;
+    else t.name = input.value;
+    saveData(); editingCell = null; render();
+    toast(field === 'salary' ? 'Remuneracao atualizada!' : 'Nome atualizado!');
+}
+
+function startEditTeamRole(td, teamId) {
+    if (editingCell) return;
+    editingCell = td;
+    const t = DATA.team.find(x => x.id === teamId);
+    const allRoles = [...new Set([...ROLES, 'Closer', 'Analista financeiro', t.role])].filter(Boolean);
+    td.innerHTML = `<select onchange="finishEditTeamSelect(this,${teamId},'role')" onblur="finishEditTeamSelect(this,${teamId},'role')">
+        ${allRoles.map(r => `<option value="${r}" ${r===t.role?'selected':''}>${r}</option>`).join('')}
+    </select>`;
+    td.querySelector('select').focus();
+}
+
+function startEditTeamSeniority(td, teamId) {
+    if (editingCell) return;
+    editingCell = td;
+    const t = DATA.team.find(x => x.id === teamId);
+    td.innerHTML = `<select onchange="finishEditTeamSelect(this,${teamId},'seniority')" onblur="finishEditTeamSelect(this,${teamId},'seniority')">
+        ${SENIORITY.map(s => `<option value="${s}" ${s===t.seniority?'selected':''}>${s || '(nenhum)'}</option>`).join('')}
+    </select>`;
+    td.querySelector('select').focus();
+}
+
+function finishEditTeamSelect(el, teamId, field) {
+    const t = DATA.team.find(x => x.id === teamId);
+    t[field] = el.value;
+    saveData(); editingCell = null; render();
+    toast('Atualizado!');
+}
+
+function deleteTeamMember(id) {
+    const t = DATA.team.find(x => x.id === id);
+    if (confirm(`Excluir "${t.name}" da equipe?`)) {
+        DATA.team = DATA.team.filter(x => x.id !== id);
+        saveData(); render(); toast('Colaborador removido');
+    }
 }
 
 // ---------- SETTINGS ----------
@@ -979,8 +1087,32 @@ function openModal(type, id) {
                 ${ROLES.map(r=>{const m=sq?sq.members.find(x=>x.role===r):null; return `<div class="form-row" style="margin-bottom:8px"><div class="form-group"><label>${r} - Nome</label><input type="text" id="f-m-${r.replace(/[\/\s]/g,'_')}" value="${m?m.name:''}"></div><div class="form-group"><label>${r} - R$/hora</label><input type="number" step="0.01" id="f-c-${r.replace(/[\/\s]/g,'_')}" value="${m?m.costPerHour:0}"></div></div>`;}).join('')}
                 <div class="modal-actions"><button type="button" class="btn" onclick="closeModal()">Cancelar</button><button type="submit" class="btn btn-primary">${sq?'Salvar':'Criar'}</button></div>
             </form>`;
+    } else if (type==='add-team') {
+        const allRoles = [...new Set([...ROLES, 'Closer', 'Analista financeiro'])];
+        modal.innerHTML = `
+            <h3>Novo Colaborador</h3>
+            <form onsubmit="saveTeamMember(event)">
+                <div class="form-group"><label>Nome Completo</label><input type="text" id="f-tname" required></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Funcao</label><select id="f-trole" required>${allRoles.map(r=>`<option value="${r}">${r}</option>`).join('')}</select></div>
+                    <div class="form-group"><label>Senioridade</label><select id="f-tsen">${SENIORITY.map(s=>`<option value="${s}">${s||'(nenhum)'}</option>`).join('')}</select></div>
+                </div>
+                <div class="form-group"><label>Remuneracao Mensal (R$)</label><input type="number" step="0.01" min="0" id="f-tsal" required></div>
+                <div class="modal-actions"><button type="button" class="btn" onclick="closeModal()">Cancelar</button><button type="submit" class="btn btn-primary">Cadastrar</button></div>
+            </form>`;
     }
     overlay.classList.add('active');
+}
+
+function saveTeamMember(e) {
+    e.preventDefault();
+    const name = document.getElementById('f-tname').value;
+    const role = document.getElementById('f-trole').value;
+    const seniority = document.getElementById('f-tsen').value;
+    const salary = parseFloat(document.getElementById('f-tsal').value) || 0;
+    DATA.team.push({ id: DATA.nextTeamId++, name, role, seniority, salary });
+    saveData(); closeModal(); render();
+    toast('Colaborador cadastrado!');
 }
 
 function closeModal() { document.getElementById('modal-overlay').classList.remove('active'); }
