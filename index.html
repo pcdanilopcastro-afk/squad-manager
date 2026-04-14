@@ -1,0 +1,1599 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Squad Manager - Gestão Operacional & Financeira</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        :root {
+            --sidebar-w: 260px;
+            --bg: #f0f2f5;
+            --surface: #ffffff;
+            --surface-2: #f8f9fa;
+            --border: #e2e8f0;
+            --text: #1a202c;
+            --text-2: #64748b;
+            --text-3: #94a3b8;
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --primary-light: #dbeafe;
+            --green: #22c55e;
+            --green-bg: #dcfce7;
+            --green-text: #166534;
+            --yellow: #eab308;
+            --yellow-bg: #fef9c3;
+            --yellow-text: #854d0e;
+            --red: #ef4444;
+            --red-bg: #fee2e2;
+            --red-text: #991b1b;
+            --sidebar-bg: #0f172a;
+            --sidebar-text: #cbd5e1;
+            --sidebar-active: #1e293b;
+            --sidebar-hover: #1e293b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: var(--sidebar-bg);
+            color: var(--sidebar-text);
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+            overflow-y: auto;
+        }
+
+        .sidebar-brand {
+            padding: 24px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .sidebar-brand h1 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .sidebar-brand p {
+            font-size: 11px;
+            color: var(--text-3);
+            margin-top: 4px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .sidebar-nav {
+            padding: 16px 12px;
+            flex: 1;
+        }
+
+        .nav-section {
+            margin-bottom: 24px;
+        }
+
+        .nav-section-title {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-3);
+            padding: 0 8px;
+            margin-bottom: 8px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-size: 14px;
+            color: var(--sidebar-text);
+            margin-bottom: 2px;
+        }
+
+        .nav-item:hover { background: var(--sidebar-hover); }
+        .nav-item.active {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .nav-item svg {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+        }
+
+        .nav-item .badge {
+            margin-left: auto;
+            background: var(--red);
+            color: #fff;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        /* Main Content */
+        .main {
+            margin-left: var(--sidebar-w);
+            flex: 1;
+            min-height: 100vh;
+        }
+
+        .topbar {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .topbar h2 {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .topbar-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .content {
+            padding: 32px;
+        }
+
+        /* Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid var(--border);
+        }
+
+        .stat-card .label {
+            font-size: 12px;
+            color: var(--text-2);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .stat-card .value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .stat-card .change {
+            font-size: 12px;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .stat-card .change.positive { color: var(--green-text); }
+        .stat-card .change.negative { color: var(--red-text); }
+
+        /* Tables */
+        .table-container {
+            background: var(--surface);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+
+        .table-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        thead th {
+            background: var(--surface-2);
+            padding: 10px 16px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-2);
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+        }
+
+        thead th.right { text-align: right; }
+        thead th.center { text-align: center; }
+
+        tbody td {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        tbody td.right { text-align: right; }
+        tbody td.center { text-align: center; }
+
+        tbody tr:hover { background: var(--surface-2); }
+
+        tbody tr.total-row {
+            background: var(--surface-2);
+            font-weight: 700;
+        }
+
+        tbody tr.total-row td {
+            border-top: 2px solid var(--border);
+        }
+
+        tbody tr.percent-row {
+            background: var(--surface-2);
+        }
+
+        tbody tr.percent-row td {
+            font-size: 11px;
+            color: var(--text-2);
+        }
+
+        /* Editable cells */
+        .editable {
+            cursor: text;
+            position: relative;
+            min-width: 60px;
+        }
+
+        .editable:hover {
+            background: var(--primary-light);
+            border-radius: 4px;
+        }
+
+        .editable input {
+            width: 70px;
+            padding: 4px 8px;
+            border: 2px solid var(--primary);
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 13px;
+            text-align: right;
+            outline: none;
+            background: #fff;
+        }
+
+        .editable-fee input {
+            width: 110px;
+        }
+
+        /* Badges */
+        .margin-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .margin-badge.green { background: var(--green-bg); color: var(--green-text); }
+        .margin-badge.yellow { background: var(--yellow-bg); color: var(--yellow-text); }
+        .margin-badge.red { background: var(--red-bg); color: var(--red-text); }
+
+        /* Capacity Bar */
+        .capacity-bar-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .capacity-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .capacity-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .capacity-bar-fill.green { background: var(--green); }
+        .capacity-bar-fill.yellow { background: var(--yellow); }
+        .capacity-bar-fill.red { background: var(--red); }
+
+        .capacity-label {
+            font-size: 12px;
+            font-weight: 600;
+            min-width: 45px;
+            text-align: right;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            font-family: inherit;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 500;
+        }
+
+        .btn:hover { background: var(--surface-2); }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+
+        .btn-primary:hover { background: var(--primary-dark); }
+
+        .btn-danger {
+            color: var(--red);
+            border-color: var(--red);
+        }
+
+        .btn-danger:hover { background: var(--red-bg); }
+
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        /* Alerts */
+        .alerts-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 32px;
+        }
+
+        .alert-item {
+            padding: 14px 20px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+        }
+
+        .alert-item.warning {
+            background: var(--yellow-bg);
+            color: var(--yellow-text);
+            border: 1px solid #fde68a;
+        }
+
+        .alert-item.danger {
+            background: var(--red-bg);
+            color: var(--red-text);
+            border: 1px solid #fecaca;
+        }
+
+        .alert-item.info {
+            background: var(--primary-light);
+            color: var(--primary-dark);
+            border: 1px solid #93c5fd;
+        }
+
+        .alert-icon { font-size: 18px; }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: var(--surface);
+            border-radius: 16px;
+            padding: 32px;
+            width: 90%;
+            max-width: 520px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal h3 {
+            font-size: 18px;
+            margin-bottom: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-2);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            border-color: var(--primary);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        /* Squad selector tabs */
+        .squad-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .squad-tab {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            font-family: inherit;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-weight: 500;
+        }
+
+        .squad-tab:hover { border-color: var(--primary); color: var(--primary); }
+        .squad-tab.active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+
+        /* Squad info bar */
+        .squad-info-bar {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .squad-info-item {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px 20px;
+            min-width: 180px;
+        }
+
+        .squad-info-item .label {
+            font-size: 11px;
+            color: var(--text-2);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .squad-info-item .value {
+            font-size: 22px;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+
+        /* Members list */
+        .members-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .member-chip {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 12px;
+        }
+
+        .member-chip .role {
+            font-size: 10px;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .member-chip .name {
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        .member-chip .cost {
+            color: var(--text-2);
+            margin-top: 2px;
+        }
+
+        /* Dashboard grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .dashboard-grid .full-width {
+            grid-column: 1 / -1;
+        }
+
+        /* View toggler */
+        .view-page { display: none; }
+        .view-page.active { display: block; }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sidebar { width: 60px; }
+            .sidebar .sidebar-brand p,
+            .sidebar .nav-section-title,
+            .sidebar .nav-item span,
+            .sidebar .nav-item .badge { display: none; }
+            .sidebar .nav-item { justify-content: center; padding: 12px; }
+            .main { margin-left: 60px; }
+            .content { padding: 20px; }
+            .dashboard-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--sidebar-bg);
+            color: #fff;
+            padding: 14px 24px;
+            border-radius: 10px;
+            font-size: 13px;
+            z-index: 2000;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* No data */
+        .no-data {
+            padding: 60px 24px;
+            text-align: center;
+            color: var(--text-3);
+        }
+
+        .no-data svg {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+    <div class="sidebar-brand">
+        <h1>SquadManager</h1>
+        <p>Gestao Operacional</p>
+    </div>
+    <nav class="sidebar-nav">
+        <div class="nav-section">
+            <div class="nav-section-title">Principal</div>
+            <div class="nav-item active" onclick="showView('dashboard')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                <span>Dashboard</span>
+            </div>
+            <div class="nav-item" onclick="showView('squads')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                <span>Squads</span>
+            </div>
+            <div class="nav-item" onclick="showView('financial')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                <span>Financeiro</span>
+            </div>
+            <div class="nav-item" onclick="showView('clients')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <span>Clientes</span>
+            </div>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">Configuracao</div>
+            <div class="nav-item" onclick="showView('settings')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+                <span>Configuracoes</span>
+            </div>
+        </div>
+    </nav>
+</aside>
+
+<!-- Main Content -->
+<div class="main">
+    <div class="topbar">
+        <h2 id="page-title">Dashboard</h2>
+        <div class="topbar-actions">
+            <button class="btn" onclick="exportData()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Exportar
+            </button>
+            <button class="btn btn-primary" onclick="openModal('add-client')">
+                + Novo Cliente
+            </button>
+        </div>
+    </div>
+
+    <div class="content">
+        <!-- DASHBOARD VIEW -->
+        <div class="view-page active" id="view-dashboard">
+            <div id="alerts-container"></div>
+            <div class="stats-grid" id="dashboard-stats"></div>
+            <div class="dashboard-grid">
+                <div class="table-container full-width" id="dashboard-squads-overview"></div>
+                <div class="table-container" id="dashboard-top-margin"></div>
+                <div class="table-container" id="dashboard-low-margin"></div>
+            </div>
+        </div>
+
+        <!-- SQUADS VIEW -->
+        <div class="view-page" id="view-squads">
+            <div class="squad-tabs" id="squad-tabs"></div>
+            <div id="squad-detail"></div>
+        </div>
+
+        <!-- FINANCIAL VIEW -->
+        <div class="view-page" id="view-financial">
+            <div class="squad-tabs" id="fin-squad-tabs"></div>
+            <div id="financial-detail"></div>
+        </div>
+
+        <!-- CLIENTS VIEW -->
+        <div class="view-page" id="view-clients">
+            <div id="clients-list"></div>
+        </div>
+
+        <!-- SETTINGS VIEW -->
+        <div class="view-page" id="view-settings">
+            <div id="settings-content"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal" id="modal-content"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ==================== DATA LAYER ====================
+const ROLES = ['Account', 'GT', 'Copy/SM', 'Designer', 'Web Designer', 'Coordenador'];
+
+function getDefaultData() {
+    return {
+        squads: [
+            {
+                id: 1,
+                name: 'Squad 1',
+                capacity: 180,
+                members: [
+                    { role: 'Account', name: 'Murillo', costPerHour: 30.54 },
+                    { role: 'GT', name: 'Conrado D.', costPerHour: 15.56 },
+                    { role: 'Copy/SM', name: 'Paula', costPerHour: 31.78 },
+                    { role: 'Designer', name: 'Leandro', costPerHour: 38.75 },
+                    { role: 'Web Designer', name: 'Conrado C.', costPerHour: 19.44 },
+                    { role: 'Coordenador', name: 'Danilo', costPerHour: 66.67 }
+                ]
+            },
+            {
+                id: 2,
+                name: 'Squad 2',
+                capacity: 180,
+                members: [
+                    { role: 'Account', name: 'Lucas', costPerHour: 30.54 },
+                    { role: 'GT', name: 'Fernando', costPerHour: 19.44 },
+                    { role: 'Copy/SM', name: 'Eduarda', costPerHour: 22.89 },
+                    { role: 'Designer', name: 'Wagner', costPerHour: 36.04 },
+                    { role: 'Web Designer', name: 'Fernando', costPerHour: 19.44 },
+                    { role: 'Coordenador', name: 'Murilo', costPerHour: 66.67 }
+                ]
+            }
+        ],
+        clients: [
+            { id: 1, squadId: 1, name: 'OMX', fee: 1670, hours: { 'Account': 0.17, 'GT': 0, 'Copy/SM': 2.3, 'Designer': 12.6, 'Web Designer': 0, 'Coordenador': 0 } },
+            { id: 2, squadId: 1, name: 'Chamelo', fee: 10250, hours: { 'Account': 0, 'GT': 0, 'Copy/SM': 0, 'Designer': 0, 'Web Designer': 0, 'Coordenador': 0 } },
+            { id: 3, squadId: 1, name: 'Gestpar', fee: 3360, hours: { 'Account': 0, 'GT': 10, 'Copy/SM': 0, 'Designer': 0, 'Web Designer': 0, 'Coordenador': 10 } },
+            { id: 4, squadId: 1, name: 'MJ Arquitetura', fee: 4200, hours: { 'Account': 1.98, 'GT': 12.5, 'Copy/SM': 6.13, 'Designer': 10.87, 'Web Designer': 0, 'Coordenador': 12.5 } },
+            { id: 5, squadId: 1, name: 'Solida Agroconsultoria', fee: 6156, hours: { 'Account': 7.35, 'GT': 12.5, 'Copy/SM': 13.95, 'Designer': 42.03, 'Web Designer': 0, 'Coordenador': 12.5 } },
+            { id: 6, squadId: 1, name: 'Guilherme Strapasson', fee: 5200, hours: { 'Account': 0, 'GT': 30, 'Copy/SM': 0, 'Designer': 0, 'Web Designer': 0, 'Coordenador': 30 } },
+            { id: 7, squadId: 2, name: 'Pontarollo', fee: 790, hours: { 'Account': 1.35, 'GT': 0, 'Copy/SM': 4.68, 'Designer': 22.08, 'Web Designer': 0, 'Coordenador': 0 } },
+            { id: 8, squadId: 2, name: 'Aeroclube', fee: 3280, hours: { 'Account': 1.28, 'GT': 10, 'Copy/SM': 6.6, 'Designer': 12.12, 'Web Designer': 0, 'Coordenador': 10 } },
+            { id: 9, squadId: 2, name: 'Instituto Blum', fee: 3900, hours: { 'Account': 0, 'GT': 10, 'Copy/SM': 4.53, 'Designer': 5.9, 'Web Designer': 0, 'Coordenador': 10 } },
+            { id: 10, squadId: 2, name: 'Life Premium', fee: 4200, hours: { 'Account': 6.62, 'GT': 0, 'Copy/SM': 6.95, 'Designer': 14.88, 'Web Designer': 0, 'Coordenador': 0 } },
+            { id: 11, squadId: 2, name: 'Kelma', fee: 3500, hours: { 'Account': 2.35, 'GT': 10, 'Copy/SM': 11.7, 'Designer': 27.25, 'Web Designer': 0, 'Coordenador': 10 } },
+            { id: 12, squadId: 2, name: 'Cemiterio Parque Jardim', fee: 6130, hours: { 'Account': 0.08, 'GT': 10, 'Copy/SM': 2.33, 'Designer': 7.98, 'Web Designer': 0, 'Coordenador': 10 } },
+            { id: 13, squadId: 2, name: 'Retibom', fee: 4225, hours: { 'Account': 1.72, 'GT': 7.5, 'Copy/SM': 6.98, 'Designer': 11.4, 'Web Designer': 0, 'Coordenador': 7.5 } },
+            { id: 14, squadId: 2, name: 'Costa Ferro', fee: 5062, hours: { 'Account': 0.45, 'GT': 12.5, 'Copy/SM': 0.3, 'Designer': 2.6, 'Web Designer': 0, 'Coordenador': 12.5 } }
+        ],
+        nextClientId: 15,
+        nextSquadId: 3
+    };
+}
+
+let DATA;
+
+function loadData() {
+    const saved = localStorage.getItem('squad-manager-data');
+    DATA = saved ? JSON.parse(saved) : getDefaultData();
+}
+
+function saveData() {
+    localStorage.setItem('squad-manager-data', JSON.stringify(DATA));
+}
+
+// ==================== CALCULATIONS ====================
+function getCostPerHour(squadId, role) {
+    const squad = DATA.squads.find(s => s.id === squadId);
+    if (!squad) return 0;
+    const member = squad.members.find(m => m.role === role);
+    return member ? member.costPerHour : 0;
+}
+
+function getClientCSPByRole(client, role) {
+    return (client.hours[role] || 0) * getCostPerHour(client.squadId, role);
+}
+
+function getClientCSPTotal(client) {
+    return ROLES.reduce((sum, role) => sum + getClientCSPByRole(client, role), 0);
+}
+
+function getClientTotalHours(client) {
+    return ROLES.reduce((sum, role) => sum + (client.hours[role] || 0), 0);
+}
+
+function getClientMargin(client) {
+    if (client.fee === 0) return 0;
+    const csp = getClientCSPTotal(client);
+    return (client.fee - csp) / client.fee;
+}
+
+function getMarginClass(margin) {
+    if (margin > 0.5) return 'green';
+    if (margin >= 0.3) return 'yellow';
+    return 'red';
+}
+
+function getSquadClients(squadId) {
+    return DATA.clients.filter(c => c.squadId === squadId);
+}
+
+function getSquadTotalHoursByRole(squadId, role) {
+    return getSquadClients(squadId).reduce((sum, c) => sum + (c.hours[role] || 0), 0);
+}
+
+function getSquadTotalHours(squadId) {
+    return getSquadClients(squadId).reduce((sum, c) => sum + getClientTotalHours(c), 0);
+}
+
+function getSquadUtilization(squadId) {
+    const squad = DATA.squads.find(s => s.id === squadId);
+    if (!squad || squad.capacity === 0) return 0;
+    return getSquadTotalHours(squadId) / squad.capacity;
+}
+
+function getSquadTotalFee(squadId) {
+    return getSquadClients(squadId).reduce((sum, c) => sum + c.fee, 0);
+}
+
+function getSquadTotalCSP(squadId) {
+    return getSquadClients(squadId).reduce((sum, c) => sum + getClientCSPTotal(c), 0);
+}
+
+function getAllAlerts() {
+    const alerts = [];
+    DATA.squads.forEach(squad => {
+        const util = getSquadUtilization(squad.id);
+        if (util > 1) {
+            alerts.push({ type: 'danger', msg: `${squad.name} esta SOBRECARREGADO (${fmt.pct(util)} de ocupacao)` });
+        } else if (util > 0.85) {
+            alerts.push({ type: 'warning', msg: `${squad.name} esta com alta ocupacao (${fmt.pct(util)})` });
+        }
+    });
+    DATA.clients.forEach(client => {
+        const margin = getClientMargin(client);
+        if (margin < 0) {
+            alerts.push({ type: 'danger', msg: `${client.name} tem margem NEGATIVA (${fmt.pct(margin)})` });
+        } else if (margin < 0.3 && client.fee > 0) {
+            alerts.push({ type: 'warning', msg: `${client.name} esta com margem baixa (${fmt.pct(margin)})` });
+        }
+    });
+    return alerts;
+}
+
+// ==================== FORMATTERS ====================
+const fmt = {
+    brl: (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+    pct: (v) => (v * 100).toFixed(1) + '%',
+    num: (v) => typeof v === 'number' ? (Number.isInteger(v) ? v.toString() : v.toFixed(2)) : '0',
+    hrs: (v) => v.toFixed(2)
+};
+
+// ==================== STATE ====================
+let currentView = 'dashboard';
+let selectedSquadId = null;
+let editingCell = null;
+
+// ==================== RENDERING ====================
+function showView(view) {
+    currentView = view;
+    document.querySelectorAll('.view-page').forEach(p => p.classList.remove('active'));
+    document.getElementById(`view-${view}`).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelectorAll('.nav-item')[['dashboard','squads','financial','clients','settings'].indexOf(view)].classList.add('active');
+
+    const titles = { dashboard: 'Dashboard', squads: 'Visao por Squad', financial: 'Visao Financeira', clients: 'Clientes', settings: 'Configuracoes' };
+    document.getElementById('page-title').textContent = titles[view];
+
+    if (!selectedSquadId && DATA.squads.length > 0) selectedSquadId = DATA.squads[0].id;
+
+    render();
+}
+
+function render() {
+    switch (currentView) {
+        case 'dashboard': renderDashboard(); break;
+        case 'squads': renderSquads(); break;
+        case 'financial': renderFinancial(); break;
+        case 'clients': renderClients(); break;
+        case 'settings': renderSettings(); break;
+    }
+}
+
+// ---------- DASHBOARD ----------
+function renderDashboard() {
+    const totalFee = DATA.clients.reduce((s, c) => s + c.fee, 0);
+    const totalCSP = DATA.clients.reduce((s, c) => s + getClientCSPTotal(c), 0);
+    const avgMargin = totalFee > 0 ? (totalFee - totalCSP) / totalFee : 0;
+    const totalClients = DATA.clients.length;
+
+    document.getElementById('dashboard-stats').innerHTML = `
+        <div class="stat-card">
+            <div class="label">Receita Total (Fee)</div>
+            <div class="value">${fmt.brl(totalFee)}</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">CSP Total</div>
+            <div class="value">${fmt.brl(totalCSP)}</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Margem Media</div>
+            <div class="value" style="color: ${avgMargin > 0.5 ? 'var(--green)' : avgMargin >= 0.3 ? 'var(--yellow)' : 'var(--red)'}">${fmt.pct(avgMargin)}</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Total de Clientes</div>
+            <div class="value">${totalClients}</div>
+        </div>
+    `;
+
+    // Alerts
+    const alerts = getAllAlerts();
+    const alertsHtml = alerts.length > 0 ? `
+        <div class="alerts-list">
+            ${alerts.map(a => `
+                <div class="alert-item ${a.type}">
+                    <span class="alert-icon">${a.type === 'danger' ? '&#9888;' : '&#9888;'}</span>
+                    <span>${a.msg}</span>
+                </div>
+            `).join('')}
+        </div>
+    ` : '';
+    document.getElementById('alerts-container').innerHTML = alertsHtml;
+
+    // Update badge
+    const badgeEl = document.querySelector('.nav-item:first-child .badge');
+    if (alerts.length > 0) {
+        if (!badgeEl) {
+            const first = document.querySelector('.nav-item');
+            first.insertAdjacentHTML('beforeend', `<span class="badge">${alerts.length}</span>`);
+        }
+    }
+
+    // Squads overview
+    document.getElementById('dashboard-squads-overview').innerHTML = `
+        <div class="table-header"><h3>Capacidade dos Squads</h3></div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Squad</th>
+                        <th class="right">Clientes</th>
+                        <th class="right">Capacidade</th>
+                        <th class="right">Horas Usadas</th>
+                        <th style="width:200px">Utilizacao</th>
+                        <th class="right">Fee Total</th>
+                        <th class="right">CSP Total</th>
+                        <th class="right">Margem</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${DATA.squads.map(squad => {
+                        const totalH = getSquadTotalHours(squad.id);
+                        const util = getSquadUtilization(squad.id);
+                        const fee = getSquadTotalFee(squad.id);
+                        const csp = getSquadTotalCSP(squad.id);
+                        const margin = fee > 0 ? (fee - csp) / fee : 0;
+                        const barClass = util > 1 ? 'red' : util > 0.85 ? 'yellow' : 'green';
+                        return `<tr>
+                            <td><strong>${squad.name}</strong></td>
+                            <td class="right">${getSquadClients(squad.id).length}</td>
+                            <td class="right">${squad.capacity}h</td>
+                            <td class="right">${fmt.hrs(totalH)}h</td>
+                            <td>
+                                <div class="capacity-bar-container">
+                                    <div class="capacity-bar"><div class="capacity-bar-fill ${barClass}" style="width:${Math.min(util*100,100)}%"></div></div>
+                                    <span class="capacity-label">${fmt.pct(util)}</span>
+                                </div>
+                            </td>
+                            <td class="right">${fmt.brl(fee)}</td>
+                            <td class="right">${fmt.brl(csp)}</td>
+                            <td class="right"><span class="margin-badge ${getMarginClass(margin)}">${fmt.pct(margin)}</span></td>
+                        </tr>`;
+                    }).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    // Top margin clients
+    const sorted = [...DATA.clients].filter(c => c.fee > 0).sort((a, b) => getClientMargin(b) - getClientMargin(a));
+    const top5 = sorted.slice(0, 5);
+    const bottom5 = sorted.slice(-5).reverse();
+
+    document.getElementById('dashboard-top-margin').innerHTML = `
+        <div class="table-header"><h3>Melhores Margens</h3></div>
+        <div class="table-wrapper">
+            <table>
+                <thead><tr><th>Cliente</th><th class="right">Fee</th><th class="right">CSP</th><th class="right">Margem</th></tr></thead>
+                <tbody>${top5.map(c => {
+                    const m = getClientMargin(c);
+                    return `<tr><td>${c.name}</td><td class="right">${fmt.brl(c.fee)}</td><td class="right">${fmt.brl(getClientCSPTotal(c))}</td><td class="right"><span class="margin-badge ${getMarginClass(m)}">${fmt.pct(m)}</span></td></tr>`;
+                }).join('')}</tbody>
+            </table>
+        </div>
+    `;
+
+    document.getElementById('dashboard-low-margin').innerHTML = `
+        <div class="table-header"><h3>Piores Margens</h3></div>
+        <div class="table-wrapper">
+            <table>
+                <thead><tr><th>Cliente</th><th class="right">Fee</th><th class="right">CSP</th><th class="right">Margem</th></tr></thead>
+                <tbody>${bottom5.map(c => {
+                    const m = getClientMargin(c);
+                    return `<tr><td>${c.name}</td><td class="right">${fmt.brl(c.fee)}</td><td class="right">${fmt.brl(getClientCSPTotal(c))}</td><td class="right"><span class="margin-badge ${getMarginClass(m)}">${fmt.pct(m)}</span></td></tr>`;
+                }).join('')}</tbody>
+            </table>
+        </div>
+    `;
+}
+
+// ---------- SQUADS ----------
+function renderSquads() {
+    renderSquadTabs('squad-tabs');
+    const squad = DATA.squads.find(s => s.id === selectedSquadId);
+    if (!squad) { document.getElementById('squad-detail').innerHTML = '<div class="no-data">Nenhum squad encontrado</div>'; return; }
+
+    const clients = getSquadClients(squad.id);
+    const totalH = getSquadTotalHours(squad.id);
+    const util = getSquadUtilization(squad.id);
+    const barClass = util > 1 ? 'red' : util > 0.85 ? 'yellow' : 'green';
+
+    let html = `
+        <div class="squad-info-bar">
+            <div class="squad-info-item">
+                <div class="label">Capacidade</div>
+                <div class="value">${squad.capacity}h</div>
+            </div>
+            <div class="squad-info-item">
+                <div class="label">Horas Usadas</div>
+                <div class="value">${fmt.hrs(totalH)}h</div>
+            </div>
+            <div class="squad-info-item">
+                <div class="label">% Livre</div>
+                <div class="value" style="color: ${barClass === 'green' ? 'var(--green)' : barClass === 'yellow' ? 'var(--yellow)' : 'var(--red)'}">${fmt.pct(Math.max(0, 1 - util))}</div>
+            </div>
+            <div class="squad-info-item" style="flex:1">
+                <div class="label">Utilizacao</div>
+                <div class="capacity-bar-container" style="margin-top:8px">
+                    <div class="capacity-bar" style="height:12px"><div class="capacity-bar-fill ${barClass}" style="width:${Math.min(util*100,100)}%"></div></div>
+                    <span class="capacity-label" style="font-size:16px">${fmt.pct(util)}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="members-grid">
+            ${squad.members.map(m => `
+                <div class="member-chip">
+                    <div class="role">${m.role}</div>
+                    <div class="name">${m.name}</div>
+                    <div class="cost">${fmt.brl(m.costPerHour)}/h</div>
+                </div>
+            `).join('')}
+        </div>
+
+        <div class="table-container">
+            <div class="table-header">
+                <h3>Alocacao de Horas</h3>
+                <span style="font-size:12px;color:var(--text-2)">Clique em um valor para editar</span>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            ${ROLES.map(r => `<th class="right">${r}</th>`).join('')}
+                            <th class="right">Total Horas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${clients.map(c => `
+                            <tr>
+                                <td><strong>${c.name}</strong></td>
+                                ${ROLES.map(r => `
+                                    <td class="right editable" onclick="startEdit(this, ${c.id}, '${r}')">${fmt.num(c.hours[r] || 0)}</td>
+                                `).join('')}
+                                <td class="right"><strong>${fmt.hrs(getClientTotalHours(c))}</strong></td>
+                            </tr>
+                        `).join('')}
+                        <tr class="total-row">
+                            <td>TOTAL (HORAS)</td>
+                            ${ROLES.map(r => `<td class="right">${fmt.hrs(getSquadTotalHoursByRole(squad.id, r))}</td>`).join('')}
+                            <td class="right">${fmt.hrs(totalH)}</td>
+                        </tr>
+                        <tr class="percent-row">
+                            <td>% Livre</td>
+                            ${ROLES.map(r => {
+                                const used = getSquadTotalHoursByRole(squad.id, r);
+                                const free = squad.capacity > 0 ? 1 - (used / squad.capacity) : 1;
+                                return `<td class="right">${fmt.pct(Math.max(0, free))}</td>`;
+                            }).join('')}
+                            <td class="right">${fmt.pct(Math.max(0, 1 - util))}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+    document.getElementById('squad-detail').innerHTML = html;
+}
+
+// ---------- FINANCIAL ----------
+function renderFinancial() {
+    renderSquadTabs('fin-squad-tabs');
+    const squad = DATA.squads.find(s => s.id === selectedSquadId);
+    if (!squad) { document.getElementById('financial-detail').innerHTML = '<div class="no-data">Nenhum squad encontrado</div>'; return; }
+
+    const clients = getSquadClients(squad.id);
+    const totalFee = getSquadTotalFee(squad.id);
+    const totalCSP = getSquadTotalCSP(squad.id);
+    const avgMargin = totalFee > 0 ? (totalFee - totalCSP) / totalFee : 0;
+
+    let html = `
+        <div class="squad-info-bar">
+            <div class="squad-info-item">
+                <div class="label">Fee Total</div>
+                <div class="value">${fmt.brl(totalFee)}</div>
+            </div>
+            <div class="squad-info-item">
+                <div class="label">CSP Total</div>
+                <div class="value">${fmt.brl(totalCSP)}</div>
+            </div>
+            <div class="squad-info-item">
+                <div class="label">Lucro Bruto</div>
+                <div class="value" style="color:var(--green)">${fmt.brl(totalFee - totalCSP)}</div>
+            </div>
+            <div class="squad-info-item">
+                <div class="label">Margem Media</div>
+                <div class="value" style="color: ${avgMargin > 0.5 ? 'var(--green)' : avgMargin >= 0.3 ? 'var(--yellow)' : 'var(--red)'}">${fmt.pct(avgMargin)}</div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div class="table-header">
+                <h3>Detalhamento Financeiro por Cliente</h3>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th class="right">Fee</th>
+                            <th class="right">CSP Total</th>
+                            <th class="right">Gross Margin</th>
+                            ${ROLES.map(r => `<th class="right">CSP ${r}</th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${clients.map(c => {
+                            const csp = getClientCSPTotal(c);
+                            const margin = getClientMargin(c);
+                            return `<tr>
+                                <td><strong>${c.name}</strong></td>
+                                <td class="right editable editable-fee" onclick="startEditFee(this, ${c.id})">${fmt.brl(c.fee)}</td>
+                                <td class="right">${fmt.brl(csp)}</td>
+                                <td class="right"><span class="margin-badge ${getMarginClass(margin)}">${fmt.pct(margin)}</span></td>
+                                ${ROLES.map(r => `<td class="right">${fmt.brl(getClientCSPByRole(c, r))}</td>`).join('')}
+                            </tr>`;
+                        }).join('')}
+                        <tr class="total-row">
+                            <td>TOTAL</td>
+                            <td class="right">${fmt.brl(totalFee)}</td>
+                            <td class="right">${fmt.brl(totalCSP)}</td>
+                            <td class="right"><span class="margin-badge ${getMarginClass(avgMargin)}">${fmt.pct(avgMargin)}</span></td>
+                            ${ROLES.map(r => {
+                                const total = clients.reduce((s, c) => s + getClientCSPByRole(c, r), 0);
+                                return `<td class="right">${fmt.brl(total)}</td>`;
+                            }).join('')}
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+    document.getElementById('financial-detail').innerHTML = html;
+}
+
+// ---------- CLIENTS ----------
+function renderClients() {
+    const html = `
+        <div class="table-container">
+            <div class="table-header">
+                <h3>Todos os Clientes</h3>
+                <button class="btn btn-primary" onclick="openModal('add-client')">+ Novo Cliente</button>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Squad</th>
+                            <th class="right">Fee</th>
+                            <th class="right">Horas Totais</th>
+                            <th class="right">CSP</th>
+                            <th class="right">Margem</th>
+                            <th class="center">Acoes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${DATA.clients.map(c => {
+                            const squad = DATA.squads.find(s => s.id === c.squadId);
+                            const csp = getClientCSPTotal(c);
+                            const margin = getClientMargin(c);
+                            return `<tr>
+                                <td><strong>${c.name}</strong></td>
+                                <td>${squad ? squad.name : '-'}</td>
+                                <td class="right">${fmt.brl(c.fee)}</td>
+                                <td class="right">${fmt.hrs(getClientTotalHours(c))}h</td>
+                                <td class="right">${fmt.brl(csp)}</td>
+                                <td class="right"><span class="margin-badge ${getMarginClass(margin)}">${fmt.pct(margin)}</span></td>
+                                <td class="center">
+                                    <button class="btn btn-sm" onclick="openModal('edit-client', ${c.id})">Editar</button>
+                                    <button class="btn btn-sm btn-danger" onclick="deleteClient(${c.id})">Excluir</button>
+                                </td>
+                            </tr>`;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+    document.getElementById('clients-list').innerHTML = html;
+}
+
+// ---------- SETTINGS ----------
+function renderSettings() {
+    let html = `
+        <div class="stats-grid" style="grid-template-columns: 1fr;">
+            ${DATA.squads.map(squad => `
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3>${squad.name}</h3>
+                        <div style="display:flex;gap:8px">
+                            <button class="btn btn-sm" onclick="openModal('edit-squad', ${squad.id})">Editar Squad</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteSquad(${squad.id})">Excluir</button>
+                        </div>
+                    </div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Funcao</th>
+                                    <th>Membro</th>
+                                    <th class="right">Custo/Hora</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${squad.members.map(m => `
+                                    <tr>
+                                        <td>${m.role}</td>
+                                        <td><strong>${m.name}</strong></td>
+                                        <td class="right">${fmt.brl(m.costPerHour)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="padding:16px 24px;font-size:13px;color:var(--text-2)">
+                        Capacidade mensal: <strong>${squad.capacity}h</strong>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+        <button class="btn btn-primary" onclick="openModal('add-squad')" style="margin-top:16px">+ Novo Squad</button>
+        <button class="btn btn-danger" onclick="if(confirm('Tem certeza que deseja resetar todos os dados para o padrao?')){localStorage.removeItem('squad-manager-data');loadData();render();toast('Dados resetados!')}" style="margin-top:16px;margin-left:12px">Resetar Dados</button>
+    `;
+    document.getElementById('settings-content').innerHTML = html;
+}
+
+// ==================== SQUAD TABS ====================
+function renderSquadTabs(containerId) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = DATA.squads.map(s => `
+        <button class="squad-tab ${s.id === selectedSquadId ? 'active' : ''}" onclick="selectSquad(${s.id})">${s.name}</button>
+    `).join('');
+}
+
+function selectSquad(id) {
+    selectedSquadId = id;
+    render();
+}
+
+// ==================== INLINE EDITING ====================
+function startEdit(td, clientId, role) {
+    if (editingCell) return;
+    editingCell = td;
+    const client = DATA.clients.find(c => c.id === clientId);
+    const val = client.hours[role] || 0;
+    const original = td.textContent;
+    td.innerHTML = `<input type="number" step="0.01" min="0" value="${val}"
+        onblur="finishEdit(this, ${clientId}, '${role}')"
+        onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this.dataset.cancel='1';this.blur()}"
+        >`;
+    td.querySelector('input').focus();
+    td.querySelector('input').select();
+    td.querySelector('input').dataset.original = original;
+}
+
+function finishEdit(input, clientId, role) {
+    if (input.dataset.cancel === '1') {
+        editingCell.textContent = input.dataset.original;
+        editingCell = null;
+        return;
+    }
+    const val = parseFloat(input.value) || 0;
+    const client = DATA.clients.find(c => c.id === clientId);
+    client.hours[role] = val;
+    saveData();
+    editingCell = null;
+    render();
+}
+
+function startEditFee(td, clientId) {
+    if (editingCell) return;
+    editingCell = td;
+    const client = DATA.clients.find(c => c.id === clientId);
+    const original = td.textContent;
+    td.innerHTML = `<input type="number" step="0.01" min="0" value="${client.fee}"
+        onblur="finishEditFee(this, ${clientId})"
+        onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this.dataset.cancel='1';this.blur()}"
+        >`;
+    td.querySelector('input').focus();
+    td.querySelector('input').select();
+    td.querySelector('input').dataset.original = original;
+}
+
+function finishEditFee(input, clientId) {
+    if (input.dataset.cancel === '1') {
+        editingCell.textContent = input.dataset.original;
+        editingCell = null;
+        return;
+    }
+    const val = parseFloat(input.value) || 0;
+    const client = DATA.clients.find(c => c.id === clientId);
+    client.fee = val;
+    saveData();
+    editingCell = null;
+    render();
+}
+
+// ==================== MODALS ====================
+function openModal(type, id) {
+    const modal = document.getElementById('modal-content');
+    const overlay = document.getElementById('modal-overlay');
+
+    if (type === 'add-client' || type === 'edit-client') {
+        const client = type === 'edit-client' ? DATA.clients.find(c => c.id === id) : null;
+        modal.innerHTML = `
+            <h3>${client ? 'Editar Cliente' : 'Novo Cliente'}</h3>
+            <form onsubmit="saveClient(event, ${client ? client.id : 'null'})">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nome do Cliente</label>
+                        <input type="text" id="f-name" required value="${client ? client.name : ''}">
+                    </div>
+                    <div class="form-group">
+                        <label>Squad</label>
+                        <select id="f-squad" required>
+                            ${DATA.squads.map(s => `<option value="${s.id}" ${client && client.squadId === s.id ? 'selected' : ''}>${s.name}</option>`).join('')}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Fee Mensal (R$)</label>
+                    <input type="number" step="0.01" id="f-fee" required value="${client ? client.fee : ''}">
+                </div>
+                <h4 style="margin:20px 0 12px;font-size:14px;color:var(--text-2)">Horas por Funcao</h4>
+                <div class="form-row">
+                    ${ROLES.map(r => `
+                        <div class="form-group">
+                            <label>${r}</label>
+                            <input type="number" step="0.01" min="0" id="f-h-${r.replace(/[\/\s]/g,'_')}" value="${client ? (client.hours[r] || 0) : 0}">
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn" onclick="closeModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">${client ? 'Salvar' : 'Criar Cliente'}</button>
+                </div>
+            </form>
+        `;
+    } else if (type === 'add-squad' || type === 'edit-squad') {
+        const squad = type === 'edit-squad' ? DATA.squads.find(s => s.id === id) : null;
+        modal.innerHTML = `
+            <h3>${squad ? 'Editar Squad' : 'Novo Squad'}</h3>
+            <form onsubmit="saveSquad(event, ${squad ? squad.id : 'null'})">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nome do Squad</label>
+                        <input type="text" id="f-sname" required value="${squad ? squad.name : ''}">
+                    </div>
+                    <div class="form-group">
+                        <label>Capacidade (horas/mes)</label>
+                        <input type="number" id="f-cap" required value="${squad ? squad.capacity : 180}">
+                    </div>
+                </div>
+                <h4 style="margin:20px 0 12px;font-size:14px;color:var(--text-2)">Membros e Custo/Hora</h4>
+                ${ROLES.map(r => {
+                    const m = squad ? squad.members.find(x => x.role === r) : null;
+                    return `
+                        <div class="form-row" style="margin-bottom:8px">
+                            <div class="form-group">
+                                <label>${r} - Nome</label>
+                                <input type="text" id="f-m-${r.replace(/[\/\s]/g,'_')}" value="${m ? m.name : ''}">
+                            </div>
+                            <div class="form-group">
+                                <label>${r} - R$/hora</label>
+                                <input type="number" step="0.01" id="f-c-${r.replace(/[\/\s]/g,'_')}" value="${m ? m.costPerHour : 0}">
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+                <div class="modal-actions">
+                    <button type="button" class="btn" onclick="closeModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">${squad ? 'Salvar' : 'Criar Squad'}</button>
+                </div>
+            </form>
+        `;
+    }
+
+    overlay.classList.add('active');
+}
+
+function closeModal() {
+    document.getElementById('modal-overlay').classList.remove('active');
+}
+
+function saveClient(e, id) {
+    e.preventDefault();
+    const name = document.getElementById('f-name').value;
+    const squadId = parseInt(document.getElementById('f-squad').value);
+    const fee = parseFloat(document.getElementById('f-fee').value) || 0;
+    const hours = {};
+    ROLES.forEach(r => {
+        hours[r] = parseFloat(document.getElementById(`f-h-${r.replace(/[\/\s]/g,'_')}`).value) || 0;
+    });
+
+    if (id) {
+        const client = DATA.clients.find(c => c.id === id);
+        client.name = name;
+        client.squadId = squadId;
+        client.fee = fee;
+        client.hours = hours;
+        toast('Cliente atualizado!');
+    } else {
+        DATA.clients.push({ id: DATA.nextClientId++, squadId, name, fee, hours });
+        toast('Cliente criado!');
+    }
+
+    saveData();
+    closeModal();
+    render();
+}
+
+function saveSquad(e, id) {
+    e.preventDefault();
+    const name = document.getElementById('f-sname').value;
+    const capacity = parseInt(document.getElementById('f-cap').value) || 180;
+    const members = ROLES.map(r => ({
+        role: r,
+        name: document.getElementById(`f-m-${r.replace(/[\/\s]/g,'_')}`).value || '',
+        costPerHour: parseFloat(document.getElementById(`f-c-${r.replace(/[\/\s]/g,'_')}`).value) || 0
+    }));
+
+    if (id) {
+        const squad = DATA.squads.find(s => s.id === id);
+        squad.name = name;
+        squad.capacity = capacity;
+        squad.members = members;
+        toast('Squad atualizado!');
+    } else {
+        const newId = DATA.nextSquadId++;
+        DATA.squads.push({ id: newId, name, capacity, members });
+        selectedSquadId = newId;
+        toast('Squad criado!');
+    }
+
+    saveData();
+    closeModal();
+    render();
+}
+
+function deleteClient(id) {
+    const client = DATA.clients.find(c => c.id === id);
+    if (confirm(`Excluir o cliente "${client.name}"?`)) {
+        DATA.clients = DATA.clients.filter(c => c.id !== id);
+        saveData();
+        render();
+        toast('Cliente excluido');
+    }
+}
+
+function deleteSquad(id) {
+    const squad = DATA.squads.find(s => s.id === id);
+    const clients = getSquadClients(id);
+    if (clients.length > 0) {
+        alert(`Nao e possivel excluir "${squad.name}" pois possui ${clients.length} cliente(s). Remova os clientes primeiro.`);
+        return;
+    }
+    if (confirm(`Excluir "${squad.name}"?`)) {
+        DATA.squads = DATA.squads.filter(s => s.id !== id);
+        if (selectedSquadId === id) selectedSquadId = DATA.squads[0]?.id || null;
+        saveData();
+        render();
+        toast('Squad excluido');
+    }
+}
+
+// ==================== EXPORT ====================
+function exportData() {
+    let csv = 'Squad,Cliente,Fee,';
+    csv += ROLES.map(r => `Horas ${r}`).join(',');
+    csv += ',Total Horas,CSP Total,Margem\n';
+
+    DATA.clients.forEach(c => {
+        const squad = DATA.squads.find(s => s.id === c.squadId);
+        csv += `"${squad?.name || ''}","${c.name}",${c.fee},`;
+        csv += ROLES.map(r => c.hours[r] || 0).join(',');
+        csv += `,${getClientTotalHours(c)},${getClientCSPTotal(c).toFixed(2)},${(getClientMargin(c)*100).toFixed(1)}%\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `squad-manager-export-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('Dados exportados!');
+}
+
+// ==================== TOAST ====================
+function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ==================== INIT ====================
+loadData();
+showView('dashboard');
+</script>
+
+</body>
+</html>
