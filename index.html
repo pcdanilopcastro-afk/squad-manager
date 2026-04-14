@@ -605,6 +605,106 @@
         .view-page { display: none; }
         .view-page.active { display: block; }
 
+        /* Login Screen */
+        .login-screen {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .login-screen.hidden { display: none; }
+
+        .login-box {
+            background: var(--surface);
+            border-radius: 20px;
+            padding: 48px 40px;
+            width: 90%;
+            max-width: 420px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .login-box .login-icon {
+            width: 64px;
+            height: 64px;
+            background: var(--primary-light);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+        }
+
+        .login-box .login-icon svg {
+            width: 32px;
+            height: 32px;
+            stroke: var(--primary);
+        }
+
+        .login-box h2 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+
+        .login-box p {
+            font-size: 14px;
+            color: var(--text-2);
+            margin-bottom: 32px;
+        }
+
+        .login-box .login-input {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s;
+            margin-bottom: 16px;
+        }
+
+        .login-box .login-input:focus {
+            border-color: var(--primary);
+        }
+
+        .login-box .login-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .login-box .login-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .login-box .login-error {
+            color: var(--red);
+            font-size: 13px;
+            margin-top: 12px;
+            min-height: 20px;
+        }
+
+        .login-box .login-footer {
+            margin-top: 24px;
+            font-size: 11px;
+            color: var(--text-3);
+        }
+
         /* Responsive */
         @media (max-width: 1024px) {
             .sidebar { width: 60px; }
@@ -656,6 +756,23 @@
 </head>
 <body>
 
+<!-- Login Screen -->
+<div class="login-screen" id="login-screen">
+    <div class="login-box">
+        <div class="login-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        </div>
+        <h2>Squad Manager</h2>
+        <p>Acesso restrito. Digite a senha para continuar.</p>
+        <form onsubmit="attemptLogin(event)">
+            <input type="password" class="login-input" id="login-password" placeholder="Senha de acesso" autofocus>
+            <button type="submit" class="login-btn">Entrar</button>
+        </form>
+        <div class="login-error" id="login-error"></div>
+        <div class="login-footer">Acesso protegido por senha</div>
+    </div>
+</div>
+
 <!-- Sidebar -->
 <aside class="sidebar">
     <div class="sidebar-brand">
@@ -703,6 +820,10 @@
             </button>
             <button class="btn btn-primary" onclick="openModal('add-client')">
                 + Novo Cliente
+            </button>
+            <button class="btn btn-danger" onclick="logout()" title="Sair">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Sair
             </button>
         </div>
     </div>
@@ -1315,6 +1436,7 @@ function renderSettings() {
             `).join('')}
         </div>
         <button class="btn btn-primary" onclick="openModal('add-squad')" style="margin-top:16px">+ Novo Squad</button>
+        <button class="btn" onclick="changePassword()" style="margin-top:16px;margin-left:12px">Alterar Senha</button>
         <button class="btn btn-danger" onclick="if(confirm('Tem certeza que deseja resetar todos os dados para o padrao?')){localStorage.removeItem('squad-manager-data');loadData();render();toast('Dados resetados!')}" style="margin-top:16px;margin-left:12px">Resetar Dados</button>
     `;
     document.getElementById('settings-content').innerHTML = html;
@@ -1590,8 +1712,98 @@ function toast(msg) {
     setTimeout(() => el.classList.remove('show'), 3000);
 }
 
+// ==================== AUTH ====================
+// Senha padrao: "squad2026" — para trocar, use a tela de configuracoes
+const DEFAULT_HASH = '9f0c5e123b6d4e8a7c2d1f0e3b5a8c7d6e9f2a1b4c7d0e3f6a9b2c5d8e1f4a7'; // placeholder
+
+async function hashPassword(password) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password + '_squadmanager_salt');
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function attemptLogin(e) {
+    e.preventDefault();
+    const password = document.getElementById('login-password').value;
+    const errorEl = document.getElementById('login-error');
+
+    if (!password) {
+        errorEl.textContent = 'Digite a senha';
+        return;
+    }
+
+    const hash = await hashPassword(password);
+    const storedHash = localStorage.getItem('squad-manager-pw-hash');
+
+    // Se nao tem senha cadastrada, a senha padrao e "squad2026"
+    if (!storedHash) {
+        const defaultHash = await hashPassword('squad2026');
+        if (hash === defaultHash) {
+            localStorage.setItem('squad-manager-pw-hash', defaultHash);
+            sessionStorage.setItem('squad-auth', 'true');
+            document.getElementById('login-screen').classList.add('hidden');
+            errorEl.textContent = '';
+            return;
+        }
+    } else if (hash === storedHash) {
+        sessionStorage.setItem('squad-auth', 'true');
+        document.getElementById('login-screen').classList.add('hidden');
+        errorEl.textContent = '';
+        return;
+    }
+
+    errorEl.textContent = 'Senha incorreta. Tente novamente.';
+    document.getElementById('login-password').value = '';
+    document.getElementById('login-password').focus();
+}
+
+function logout() {
+    sessionStorage.removeItem('squad-auth');
+    document.getElementById('login-screen').classList.remove('hidden');
+    document.getElementById('login-password').value = '';
+    document.getElementById('login-error').textContent = '';
+}
+
+function checkAuth() {
+    if (sessionStorage.getItem('squad-auth') === 'true') {
+        document.getElementById('login-screen').classList.add('hidden');
+    }
+}
+
+async function changePassword() {
+    const current = prompt('Digite a senha atual:');
+    if (!current) return;
+
+    const currentHash = await hashPassword(current);
+    const storedHash = localStorage.getItem('squad-manager-pw-hash');
+
+    if (currentHash !== storedHash) {
+        alert('Senha atual incorreta.');
+        return;
+    }
+
+    const newPw = prompt('Digite a nova senha:');
+    if (!newPw || newPw.length < 4) {
+        alert('A senha deve ter pelo menos 4 caracteres.');
+        return;
+    }
+
+    const confirmPw = prompt('Confirme a nova senha:');
+    if (newPw !== confirmPw) {
+        alert('As senhas nao coincidem.');
+        return;
+    }
+
+    const newHash = await hashPassword(newPw);
+    localStorage.setItem('squad-manager-pw-hash', newHash);
+    toast('Senha alterada com sucesso!');
+}
+
 // ==================== INIT ====================
 loadData();
+checkAuth();
 showView('dashboard');
 </script>
 
