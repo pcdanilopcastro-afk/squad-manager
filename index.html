@@ -727,17 +727,27 @@ function renderSettings() {
     document.getElementById('settings-content').innerHTML = `
         ${DATA.squads.map(sq=>`
             <div class="table-container">
-                <div class="table-header"><h3>${sq.name}</h3><div style="display:flex;gap:8px"><button class="btn btn-sm" onclick="openModal('edit-squad',${sq.id})">Editar</button><button class="btn btn-sm btn-danger" onclick="deleteSquad(${sq.id})">Excluir</button></div></div>
+                <div class="table-header"><h3>${sq.name}</h3><div style="display:flex;gap:8px"><button class="btn btn-sm" onclick="openModal('edit-squad',${sq.id})">Editar Squad</button><button class="btn btn-sm btn-danger" onclick="deleteSquad(${sq.id})">Excluir</button></div></div>
                 <div class="table-wrapper"><table><thead><tr><th>Funcao</th><th>Membro</th><th class="r">Custo/Hora</th></tr></thead><tbody>
-                ${sq.members.map(m=>`<tr><td>${m.role}</td><td><strong>${m.name}</strong></td><td class="r">${fmt.brl(m.costPerHour)}</td></tr>`).join('')}
+                ${sq.members.map((m,i)=>`<tr>
+                    <td>${m.role}</td>
+                    <td class="editable" onclick="startEditMemberName(this,${sq.id},${i})"><strong>${m.name||'(vazio)'}</strong></td>
+                    <td class="r editable" onclick="startEditMemberCost(this,${sq.id},${i})">${fmt.brl(m.costPerHour)}</td>
+                </tr>`).join('')}
                 </tbody></table></div>
-                <div style="padding:16px 24px;font-size:13px;color:var(--text-2)">Capacidade mensal: <strong>${sq.capacity}h</strong></div>
+                <div style="padding:16px 24px;font-size:13px;color:var(--text-2);display:flex;align-items:center;gap:8px">
+                    Capacidade mensal: <strong class="editable" style="padding:4px 8px" onclick="startEditCapacity(this,${sq.id})">${sq.capacity}h</strong>
+                    <span style="font-size:11px;color:var(--text-3)">(clique para alterar)</span>
+                </div>
             </div>
         `).join('')}
         <div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap">
             <button class="btn btn-primary" onclick="openModal('add-squad')">+ Novo Squad</button>
             <button class="btn" onclick="changePassword()">Alterar Senha</button>
             <button class="btn btn-danger" onclick="if(confirm('Resetar todos os dados?')){localStorage.removeItem('squad-manager-data-v2');loadData();render();toast('Dados resetados!')}">Resetar Dados</button>
+        </div>
+        <div style="margin-top:24px;padding:16px 20px;background:var(--primary-light);border-radius:10px;font-size:13px;color:var(--primary-dark)">
+            <strong>Dica:</strong> Clique diretamente no nome, custo/hora ou capacidade de qualquer membro para editar sem abrir modal.
         </div>
     `;
 }
@@ -797,6 +807,60 @@ function finishEditFee(input, clientId) {
     if (input.dataset.cancel==='1') { editingCell=null; render(); return; }
     DATA.clients.find(x=>x.id===clientId).fee = parseFloat(input.value) || 0;
     saveData(); editingCell = null; render();
+}
+
+// ==================== MEMBER INLINE EDITING ====================
+function startEditMemberName(td, squadId, memberIdx) {
+    if (editingCell) return;
+    editingCell = td;
+    const sq = DATA.squads.find(s=>s.id===squadId);
+    const val = sq.members[memberIdx].name;
+    td.innerHTML = `<input type="text" value="${val}" style="width:120px;text-align:left" onblur="finishEditMemberName(this,${squadId},${memberIdx})" onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this.dataset.cancel='1';this.blur()}">`;
+    td.querySelector('input').focus();
+    td.querySelector('input').select();
+}
+
+function finishEditMemberName(input, squadId, memberIdx) {
+    if (input.dataset.cancel==='1') { editingCell=null; render(); return; }
+    const sq = DATA.squads.find(s=>s.id===squadId);
+    sq.members[memberIdx].name = input.value;
+    saveData(); editingCell=null; render();
+    toast('Nome atualizado!');
+}
+
+function startEditMemberCost(td, squadId, memberIdx) {
+    if (editingCell) return;
+    editingCell = td;
+    const sq = DATA.squads.find(s=>s.id===squadId);
+    const val = sq.members[memberIdx].costPerHour;
+    td.innerHTML = `<input type="number" step="0.01" min="0" value="${val}" onblur="finishEditMemberCost(this,${squadId},${memberIdx})" onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this.dataset.cancel='1';this.blur()}">`;
+    td.querySelector('input').focus();
+    td.querySelector('input').select();
+}
+
+function finishEditMemberCost(input, squadId, memberIdx) {
+    if (input.dataset.cancel==='1') { editingCell=null; render(); return; }
+    const sq = DATA.squads.find(s=>s.id===squadId);
+    sq.members[memberIdx].costPerHour = parseFloat(input.value) || 0;
+    saveData(); editingCell=null; render();
+    toast('Custo/hora atualizado!');
+}
+
+function startEditCapacity(el, squadId) {
+    if (editingCell) return;
+    editingCell = el;
+    const sq = DATA.squads.find(s=>s.id===squadId);
+    el.innerHTML = `<input type="number" min="1" value="${sq.capacity}" style="width:70px" onblur="finishEditCapacity(this,${squadId})" onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this.dataset.cancel='1';this.blur()}">`;
+    el.querySelector('input').focus();
+    el.querySelector('input').select();
+}
+
+function finishEditCapacity(input, squadId) {
+    if (input.dataset.cancel==='1') { editingCell=null; render(); return; }
+    const sq = DATA.squads.find(s=>s.id===squadId);
+    sq.capacity = parseInt(input.value) || 180;
+    saveData(); editingCell=null; render();
+    toast('Capacidade atualizada!');
 }
 
 // ==================== ALERTS ====================
