@@ -704,6 +704,45 @@ function renderSquads() {
     document.getElementById('squad-detail').innerHTML = html;
 }
 
+function buildPricingTable(cls, mk) {
+    const defasados = cls.filter(c => {
+        const csp = clientCSP(c, mk);
+        return csp > 0 && c.fee < csp / 0.5;
+    });
+    if (!defasados.length) {
+        return '<div class="table-container"><div class="table-header"><h3>Analise de Pricing</h3></div><div style="padding:32px;text-align:center;color:var(--green-text);font-size:14px">Todos os clientes estao com fee saudavel para margem de 50%.</div></div>';
+    }
+    const defTotalCSP = defasados.reduce((s,c) => s + clientCSP(c,mk), 0);
+    const defTotalFee = defasados.reduce((s,c) => s + c.fee, 0);
+    const defTotalSugerido = defTotalCSP / 0.5;
+    let rows = defasados.map(c => {
+        const csp = clientCSP(c,mk), m = clientMargin(c,mk), hrs = clientTotalHours(c,mk);
+        const feeSugerido = csp / 0.5;
+        const reajuste = feeSugerido - c.fee;
+        return '<tr>' +
+            '<td><strong>' + c.name + '</strong></td>' +
+            '<td class="r">' + fmt.hrs(hrs) + 'h</td>' +
+            '<td class="r">' + fmt.brl(csp) + '</td>' +
+            '<td class="r">' + fmt.brl(c.fee) + '</td>' +
+            '<td class="r"><strong>' + fmt.brl(feeSugerido) + '</strong></td>' +
+            '<td class="r"><span class="dev-positive">+' + fmt.brl(reajuste) + '</span></td>' +
+            '<td class="r"><span class="badge-margin ' + marginClass(m) + '">' + fmt.pct(m) + '</span></td>' +
+            '</tr>';
+    }).join('');
+    rows += '<tr class="total-row">' +
+        '<td>TOTAL (' + defasados.length + ' clientes)</td>' +
+        '<td class="r"></td>' +
+        '<td class="r">' + fmt.brl(defTotalCSP) + '</td>' +
+        '<td class="r">' + fmt.brl(defTotalFee) + '</td>' +
+        '<td class="r"><strong>' + fmt.brl(defTotalSugerido) + '</strong></td>' +
+        '<td class="r"><span class="dev-positive">+' + fmt.brl(defTotalSugerido - defTotalFee) + '</span></td>' +
+        '<td></td></tr>';
+    return '<div class="table-container">' +
+        '<div class="table-header"><h3>Clientes Defasados - Precisam de Reajuste</h3><span style="font-size:12px;color:var(--red)">' + defasados.length + ' cliente' + (defasados.length>1?'s':'') + ' com fee abaixo do ideal para 50% de margem</span></div>' +
+        '<div class="table-wrapper"><table><thead><tr><th>Cliente</th><th class="r">Horas</th><th class="r">CSP Total</th><th class="r">Fee Atual</th><th class="r">Fee Sugerido (50%)</th><th class="r">Reajuste Necessario</th><th class="r">Margem Atual</th></tr></thead><tbody>' +
+        rows + '</tbody></table></div></div>';
+}
+
 // ---------- FINANCIAL ----------
 function renderFinancial() {
     renderTabs('fin-tabs');
@@ -737,44 +776,7 @@ function renderFinancial() {
             </tbody></table></div>
         </div>
 
-        <!-- Pricing: Fee Sugerido -->
-        <div class="table-container">
-            <div class="table-header"><h3>Analise de Pricing - Fee vs Custo Real</h3><span style="font-size:12px;color:var(--text-2)">Fee sugerido para margem de 50%</span></div>
-            <div class="table-wrapper"><table><thead><tr><th>Cliente</th><th class="r">Horas</th><th class="r">CSP Total</th><th class="r">Fee Atual</th><th class="r">Fee Sugerido</th><th class="r">Diferenca</th><th class="r">Margem Atual</th><th class="r">Situacao</th></tr></thead><tbody>
-            ${cls.map(c=>{
-                const csp=clientCSP(c,mk), m=clientMargin(c,mk), hrs=clientTotalHours(c,mk);
-                const feeSugerido = csp / 0.5; // CSP / (1 - 0.50) = CSP * 2
-                const diff = c.fee - feeSugerido;
-                const situacao = diff >= 0 ? 'Saudavel' : 'Defasado';
-                const sitClass = diff >= 0 ? 'green' : 'red';
-                return `<tr>
-                    <td><strong>${c.name}</strong></td>
-                    <td class="r">${fmt.hrs(hrs)}h</td>
-                    <td class="r">${fmt.brl(csp)}</td>
-                    <td class="r">${fmt.brl(c.fee)}</td>
-                    <td class="r"><strong>${fmt.brl(feeSugerido)}</strong></td>
-                    <td class="r"><span class="${diff>=0?'dev-negative':'dev-positive'}">${diff>=0?'+':''}${fmt.brl(diff)}</span></td>
-                    <td class="r"><span class="badge-margin ${marginClass(m)}">${fmt.pct(m)}</span></td>
-                    <td class="r"><span class="badge-margin ${sitClass}">${situacao}</span></td>
-                </tr>`;
-            }).join('')}
-            ${(()=>{
-                const totalHrs=squadTotalHours(sq.id,mk);
-                const totalFeeSugerido = totalCSP_val / 0.5;
-                const totalDiff = totalFee - totalFeeSugerido;
-                return `<tr class="total-row">
-                    <td>TOTAL</td>
-                    <td class="r">${fmt.hrs(totalHrs)}h</td>
-                    <td class="r">${fmt.brl(totalCSP_val)}</td>
-                    <td class="r">${fmt.brl(totalFee)}</td>
-                    <td class="r"><strong>${fmt.brl(totalFeeSugerido)}</strong></td>
-                    <td class="r"><span class="${totalDiff>=0?'dev-negative':'dev-positive'}">${totalDiff>=0?'+':''}${fmt.brl(totalDiff)}</span></td>
-                    <td class="r"><span class="badge-margin ${marginClass(avgM)}">${fmt.pct(avgM)}</span></td>
-                    <td></td>
-                </tr>`;
-            })()}
-            </tbody></table></div>
-        </div>
+        ${buildPricingTable(cls, mk, totalCSP_val)}
 
         <!-- Detalhamento por Cliente -->
         <div class="table-container">
