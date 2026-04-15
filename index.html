@@ -509,7 +509,13 @@ function totalDeviation(client) {
 function squadClients(sqId) { return DATA.clients.filter(c => c.squadId === sqId && c.status !== 'cancelled'); }
 function squadTotalByRole(sqId, role, month) { return squadClients(sqId).reduce((s,c) => s + getHours(c,role,month), 0); }
 function squadTotalHours(sqId, month) { return squadClients(sqId).reduce((s,c) => s + clientTotalHours(c,month), 0); }
-function squadUtil(sqId, month) { const sq = DATA.squads.find(s=>s.id===sqId); return sq && sq.capacity > 0 ? squadTotalHours(sqId,month)/sq.capacity : 0; }
+function squadCapacity(sqId) {
+    const sq = DATA.squads.find(s=>s.id===sqId);
+    if (!sq) return 0;
+    const activeMembers = sq.members.filter(m => m.name && m.name.trim() !== '').length;
+    return activeMembers * (sq.capacity || HOURS_BASE); // capacity = horas por pessoa (default 180)
+}
+function squadUtil(sqId, month) { const cap = squadCapacity(sqId); return cap > 0 ? squadTotalHours(sqId,month)/cap : 0; }
 function squadFee(sqId) { return squadClients(sqId).reduce((s,c) => s + c.fee, 0); }
 function squadCSP(sqId, month) { return squadClients(sqId).reduce((s,c) => s + clientCSP(c,month), 0); }
 
@@ -628,7 +634,7 @@ function renderDashboard() {
         ${DATA.squads.map(sq=>{
             const h=squadTotalHours(sq.id,mk), u=squadUtil(sq.id,mk), f=squadFee(sq.id), c=squadCSP(sq.id,mk), m=f>0?(f-c)/f:0;
             const bc=u>1?'red':u>0.85?'yellow':'green';
-            return `<tr><td><strong>${sq.name}</strong></td><td class="r">${squadClients(sq.id).length}</td><td class="r">${sq.capacity}h</td><td class="r">${fmt.hrs(h)}h</td><td><div class="capacity-bar-container"><div class="capacity-bar"><div class="capacity-bar-fill ${bc}" style="width:${Math.min(u*100,100)}%"></div></div><span class="capacity-label">${fmt.pct(u)}</span></div></td><td class="r">${fmt.brl(f)}</td><td class="r">${fmt.brl(c)}</td><td class="r"><span class="badge-margin ${marginClass(m)}">${fmt.pct(m)}</span></td></tr>`;
+            return `<tr><td><strong>${sq.name}</strong></td><td class="r">${squadClients(sq.id).length}</td><td class="r">${squadCapacity(sq.id)}h</td><td class="r">${fmt.hrs(h)}h</td><td><div class="capacity-bar-container"><div class="capacity-bar"><div class="capacity-bar-fill ${bc}" style="width:${Math.min(u*100,100)}%"></div></div><span class="capacity-label">${fmt.pct(u)}</span></div></td><td class="r">${fmt.brl(f)}</td><td class="r">${fmt.brl(c)}</td><td class="r"><span class="badge-margin ${marginClass(m)}">${fmt.pct(m)}</span></td></tr>`;
         }).join('')}</tbody></table></div>`;
 
     // Top/Low margin
@@ -662,7 +668,8 @@ function renderSquads() {
 
     let html = `
         <div class="info-bar">
-            <div class="info-item"><div class="label">Capacidade</div><div class="value">${sq.capacity}h</div></div>
+            <div class="info-item"><div class="label">Capacidade Total</div><div class="value">${squadCapacity(sq.id)}h</div></div>
+            <div class="info-item"><div class="label">Horas/Pessoa</div><div class="value">${sq.capacity}h</div></div>
             <div class="info-item"><div class="label">Horas Usadas</div><div class="value">${fmt.hrs(totalH)}h</div></div>
             <div class="info-item"><div class="label">% Livre</div><div class="value" style="color:var(--${bc})">${fmt.pct(Math.max(0,1-u))}</div></div>
             <div class="info-item" style="flex:1"><div class="label">Utilizacao</div><div class="capacity-bar-container" style="margin-top:8px"><div class="capacity-bar" style="height:12px"><div class="capacity-bar-fill ${bc}" style="width:${Math.min(u*100,100)}%"></div></div><span class="capacity-label" style="font-size:16px">${fmt.pct(u)}</span></div></div>
@@ -673,7 +680,7 @@ function renderSquads() {
         <div class="table-container">
             <div class="table-header"><h3>Horas Planejadas (Contrato)</h3><span style="font-size:12px;color:var(--text-2)">Clique para editar</span></div>
             <div class="table-wrapper"><table><thead><tr><th>Cliente</th>${ROLES.map(r=>`<th class="r">${r}</th>`).join('')}<th class="r">Total</th><th class="r">% do Squad</th></tr></thead><tbody>
-            ${cls.map(c=>{const ch=clientTotalPlanned(c); const pct=sq.capacity>0?ch/sq.capacity:0; return `<tr><td><strong>${c.name}</strong></td>${ROLES.map(r=>`<td class="r editable" onclick="startEditPlanned(this,${c.id},'${r}')">${fmt.num(getPlanned(c,r))}</td>`).join('')}<td class="r"><strong>${fmt.hrs(ch)}</strong></td><td class="r"><span class="badge-margin ${pct>0.3?'red':pct>0.15?'yellow':'green'}">${fmt.pct(pct)}</span></td></tr>`;}).join('')}
+            ${cls.map(c=>{const ch=clientTotalPlanned(c); const sqCap=squadCapacity(sq.id); const pct=sqCap>0?ch/sqCap:0; return `<tr><td><strong>${c.name}</strong></td>${ROLES.map(r=>`<td class="r editable" onclick="startEditPlanned(this,${c.id},'${r}')">${fmt.num(getPlanned(c,r))}</td>`).join('')}<td class="r"><strong>${fmt.hrs(ch)}</strong></td><td class="r"><span class="badge-margin ${pct>0.3?'red':pct>0.15?'yellow':'green'}">${fmt.pct(pct)}</span></td></tr>`;}).join('')}
             <tr class="total-row"><td>TOTAL</td>${ROLES.map(r=>`<td class="r">${fmt.hrs(cls.reduce((s,c)=>s+getPlanned(c,r),0))}</td>`).join('')}<td class="r">${fmt.hrs(cls.reduce((s,c)=>s+clientTotalPlanned(c),0))}</td><td class="r">${fmt.pct(u)}</td></tr>
             </tbody></table></div>
         </div>
@@ -685,10 +692,10 @@ function renderSquads() {
             ${cls.map(c=>{
                 const dev = totalDeviation(c);
                 const actH = hasActuals(c,mk) ? clientTotalActual(c,mk) : 0;
-                const actPct = sq.capacity>0 ? actH/sq.capacity : 0;
+                const sqCap2=squadCapacity(sq.id); const actPct = sqCap2>0 ? actH/sqCap2 : 0;
                 return `<tr><td><strong>${c.name}</strong></td>${ROLES.map(r=>`<td class="r editable" onclick="startEditActual(this,${c.id},'${r}')">${hasActuals(c,mk)?fmt.num(getActual(c,r,mk)):'-'}</td>`).join('')}<td class="r">${hasActuals(c,mk)?fmt.hrs(actH):'-'}</td><td class="r">${hasActuals(c,mk)?`<span class="badge-margin ${actPct>0.3?'red':actPct>0.15?'yellow':'green'}">${fmt.pct(actPct)}</span>`:'-'}</td><td class="r">${hasActuals(c,mk)?devHtml(dev):'-'}</td></tr>`;
             }).join('')}
-            ${anyActuals ? (()=>{const totalAct=cls.filter(c=>hasActuals(c,mk)).reduce((s,c)=>s+clientTotalActual(c,mk),0); const totalActPct=sq.capacity>0?totalAct/sq.capacity:0; return `<tr class="total-row"><td>TOTAL</td>${ROLES.map(r=>{const act=cls.filter(c=>hasActuals(c,mk)).reduce((s,c)=>s+getActual(c,r,mk),0); return `<td class="r">${fmt.hrs(act)}</td>`;}).join('')}<td class="r">${fmt.hrs(totalAct)}</td><td class="r">${fmt.pct(totalActPct)}</td><td class="r">${devHtml(cls.filter(c=>hasActuals(c,mk)).reduce((s,c)=>s+totalDeviation(c),0))}</td></tr>`;})() : ''}
+            ${anyActuals ? (()=>{const totalAct=cls.filter(c=>hasActuals(c,mk)).reduce((s,c)=>s+clientTotalActual(c,mk),0); const sqCapAct=squadCapacity(sq.id); const totalActPct=sqCapAct>0?totalAct/sqCapAct:0; return `<tr class="total-row"><td>TOTAL</td>${ROLES.map(r=>{const act=cls.filter(c=>hasActuals(c,mk)).reduce((s,c)=>s+getActual(c,r,mk),0); return `<td class="r">${fmt.hrs(act)}</td>`;}).join('')}<td class="r">${fmt.hrs(totalAct)}</td><td class="r">${fmt.pct(totalActPct)}</td><td class="r">${devHtml(cls.filter(c=>hasActuals(c,mk)).reduce((s,c)=>s+totalDeviation(c),0))}</td></tr>`;})() : ''}
             </tbody></table></div>
         </div>
 
@@ -697,7 +704,7 @@ function renderSquads() {
             <div class="table-header"><h3>Capacidade por Funcao</h3></div>
             <div class="table-wrapper"><table><thead><tr><th>Metrica</th>${ROLES.map(r=>`<th class="r">${r}</th>`).join('')}<th class="r">Total</th></tr></thead><tbody>
             <tr><td>Horas Alocadas</td>${ROLES.map(r=>`<td class="r">${fmt.hrs(squadTotalByRole(sq.id,r,mk))}</td>`).join('')}<td class="r">${fmt.hrs(totalH)}</td></tr>
-            <tr class="pct-row"><td>% Livre</td>${ROLES.map(r=>{const used=squadTotalByRole(sq.id,r,mk); const free=sq.capacity>0?1-(used/sq.capacity):1; return `<td class="r">${fmt.pct(Math.max(0,free))}</td>`;}).join('')}<td class="r">${fmt.pct(Math.max(0,1-u))}</td></tr>
+            <tr class="pct-row"><td>% Livre</td>${ROLES.map(r=>{const used=squadTotalByRole(sq.id,r,mk); const sqCapR=squadCapacity(sq.id); const free=sqCapR>0?1-(used/sqCapR):1; return `<td class="r">${fmt.pct(Math.max(0,free))}</td>`;}).join('')}<td class="r">${fmt.pct(Math.max(0,1-u))}</td></tr>
             </tbody></table></div>
         </div>
     `;
@@ -984,7 +991,7 @@ function renderSettings() {
                 </tr>`).join('')}
                 </tbody></table></div>
                 <div style="padding:16px 24px;font-size:13px;color:var(--text-2);display:flex;align-items:center;gap:8px">
-                    Capacidade mensal: <strong class="editable" style="padding:4px 8px" onclick="startEditCapacity(this,${sq.id})">${sq.capacity}h</strong>
+                    Horas/pessoa: <strong class="editable" style="padding:4px 8px" onclick="startEditCapacity(this,${sq.id})">${sq.capacity}h</strong> &nbsp;|&nbsp; Membros: ${sq.members.filter(m=>m.name&&m.name.trim()).length} &nbsp;|&nbsp; Capacidade total: <strong>${squadCapacity(sq.id)}h</strong>
                     <span style="font-size:11px;color:var(--text-3)">(clique para alterar)</span>
                 </div>
             </div>
@@ -1143,7 +1150,7 @@ function openModal(type, id) {
         modal.innerHTML = `
             <h3>${sq?'Editar Squad':'Novo Squad'}</h3>
             <form onsubmit="saveSquad(event,${sq?sq.id:'null'})">
-                <div class="form-row"><div class="form-group"><label>Nome</label><input type="text" id="f-sname" required value="${sq?sq.name:''}"></div><div class="form-group"><label>Capacidade (h/mes)</label><input type="number" id="f-cap" required value="${sq?sq.capacity:180}"></div></div>
+                <div class="form-row"><div class="form-group"><label>Nome</label><input type="text" id="f-sname" required value="${sq?sq.name:''}"></div><div class="form-group"><label>Horas/pessoa/mes</label><input type="number" id="f-cap" required value="${sq?sq.capacity:180}"></div></div>
                 <h4 style="margin:20px 0 12px;font-size:14px;color:var(--text-2)">Membros e Custo/Hora</h4>
                 ${ROLES.map(r=>{const m=sq?sq.members.find(x=>x.role===r):null; return `<div class="form-row" style="margin-bottom:8px"><div class="form-group"><label>${r} - Nome</label><input type="text" id="f-m-${r.replace(/[\/\s]/g,'_')}" value="${m?m.name:''}"></div><div class="form-group"><label>${r} - R$/hora</label><input type="number" step="0.01" id="f-c-${r.replace(/[\/\s]/g,'_')}" value="${m?m.costPerHour:0}"></div></div>`;}).join('')}
                 <div class="modal-actions"><button type="button" class="btn" onclick="closeModal()">Cancelar</button><button type="submit" class="btn btn-primary">${sq?'Salvar':'Criar'}</button></div>
