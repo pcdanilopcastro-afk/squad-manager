@@ -720,14 +720,32 @@ function renderFinancial() {
             <div class="info-item"><div class="label">Margem Media</div><div class="value" style="color:${avgM>0.5?'var(--green)':avgM>=0.3?'var(--yellow)':'var(--red)'}">${fmt.pct(avgM)}</div></div>
         </div>
 
+        <!-- CSP por Area -->
         <div class="table-container">
-            <div class="table-header"><h3>Detalhamento Financeiro - ${monthLabel()}</h3></div>
-            <div class="table-wrapper"><table><thead><tr><th>Cliente</th><th class="r">Fee</th><th class="r">CSP Total</th><th class="r">Margem</th><th class="r">Status</th>${ROLES.map(r=>`<th class="r">CSP ${r}</th>`).join('')}</tr></thead><tbody>
-            ${cls.map(c=>{
-                const csp=clientCSP(c,mk), m=clientMargin(c,mk);
-                return `<tr><td><strong>${c.name}</strong></td><td class="r editable wide" onclick="startEditFee(this,${c.id})">${fmt.brl(c.fee)}</td><td class="r">${fmt.brl(csp)}</td><td class="r"><span class="badge-margin ${marginClass(m)}">${fmt.pct(m)}</span></td><td class="r"><span class="badge-status ${c.status}">${STATUS_LABELS[c.status]||c.status}</span></td>${ROLES.map(r=>`<td class="r">${fmt.brl(clientCSPByRole(c,r,mk))}</td>`).join('')}</tr>`;
+            <div class="table-header"><h3>CSP por Area - ${monthLabel()}</h3></div>
+            <div class="table-wrapper"><table><thead><tr><th>Area</th><th class="r">Horas Totais</th><th class="r">Custo/Hora</th><th class="r">CSP Total</th><th class="r">% do CSP</th></tr></thead><tbody>
+            ${ROLES.map(r=>{
+                const hrs=squadTotalByRole(sq.id,r,mk);
+                const cost=getCost(sq.id,r);
+                const cspRole=cls.reduce((s,c)=>s+clientCSPByRole(c,r,mk),0);
+                const pct=totalCSP_val>0?cspRole/totalCSP_val:0;
+                return `<tr><td><strong>${r}</strong></td><td class="r">${fmt.hrs(hrs)}h</td><td class="r">${fmt.brl(cost)}</td><td class="r">${fmt.brl(cspRole)}</td><td class="r">${fmt.pct(pct)}</td></tr>`;
             }).join('')}
-            <tr class="total-row"><td>TOTAL</td><td class="r">${fmt.brl(totalFee)}</td><td class="r">${fmt.brl(totalCSP_val)}</td><td class="r"><span class="badge-margin ${marginClass(avgM)}">${fmt.pct(avgM)}</span></td><td></td>${ROLES.map(r=>`<td class="r">${fmt.brl(cls.reduce((s,c)=>s+clientCSPByRole(c,r,mk),0))}</td>`).join('')}</tr>
+            <tr class="total-row"><td>TOTAL</td><td class="r">${fmt.hrs(squadTotalHours(sq.id,mk))}h</td><td class="r">-</td><td class="r">${fmt.brl(totalCSP_val)}</td><td class="r">100%</td></tr>
+            </tbody></table></div>
+        </div>
+
+        <!-- Detalhamento por Cliente -->
+        <div class="table-container">
+            <div class="table-header"><h3>Detalhamento por Cliente - ${monthLabel()}</h3></div>
+            <div class="table-wrapper"><table><thead><tr><th>Cliente</th><th class="r">Fee</th><th class="r">Horas</th><th class="r">CSP Total</th><th class="r">Custo/Hora</th><th class="r">Margem</th><th class="r">Status</th>${ROLES.map(r=>`<th class="r">CSP ${r}</th>`).join('')}</tr></thead><tbody>
+            ${cls.map(c=>{
+                const csp=clientCSP(c,mk), m=clientMargin(c,mk), hrs=clientTotalHours(c,mk);
+                const cph=hrs>0?csp/hrs:0;
+                return `<tr><td><strong>${c.name}</strong></td><td class="r editable wide" onclick="startEditFee(this,${c.id})">${fmt.brl(c.fee)}</td><td class="r">${fmt.hrs(hrs)}h</td><td class="r">${fmt.brl(csp)}</td><td class="r">${fmt.brl(cph)}</td><td class="r"><span class="badge-margin ${marginClass(m)}">${fmt.pct(m)}</span></td><td class="r"><span class="badge-status ${c.status}">${STATUS_LABELS[c.status]||c.status}</span></td>${ROLES.map(r=>`<td class="r">${fmt.brl(clientCSPByRole(c,r,mk))}</td>`).join('')}</tr>`;
+            }).join('')}
+            ${(()=>{const totalHrs=squadTotalHours(sq.id,mk); const avgCph=totalHrs>0?totalCSP_val/totalHrs:0; return `
+            <tr class="total-row"><td>TOTAL</td><td class="r">${fmt.brl(totalFee)}</td><td class="r">${fmt.hrs(totalHrs)}h</td><td class="r">${fmt.brl(totalCSP_val)}</td><td class="r">${fmt.brl(avgCph)}</td><td class="r"><span class="badge-margin ${marginClass(avgM)}">${fmt.pct(avgM)}</span></td><td></td>${ROLES.map(r=>`<td class="r">${fmt.brl(cls.reduce((s,c)=>s+clientCSPByRole(c,r,mk),0))}</td>`).join('')}</tr>`;})()}
             </tbody></table></div>
         </div>
     `;
