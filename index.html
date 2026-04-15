@@ -121,7 +121,6 @@
         .badge-status.active { background: var(--green-bg); color: var(--green-text); }
         .badge-status.negotiation { background: var(--yellow-bg); color: var(--yellow-text); }
         .badge-status.cancelled { background: var(--red-bg); color: var(--red-text); }
-        .badge-status.expired { background: #f1f5f9; color: var(--text-2); }
 
         /* Deviation indicators */
         .dev-positive { color: var(--red-text); font-weight: 600; }
@@ -293,7 +292,7 @@
         </div>
     </div>
     <div class="content">
-        <div class="view-page active" id="view-dashboard"><div id="alerts-container"></div><div class="stats-grid" id="dashboard-stats"></div><div class="dashboard-grid"><div class="table-container full-width" id="dash-squads"></div><div class="table-container" id="dash-top"></div><div class="table-container" id="dash-low"></div><div class="table-container full-width" id="dash-expiring"></div></div></div>
+        <div class="view-page active" id="view-dashboard"><div id="alerts-container"></div><div class="stats-grid" id="dashboard-stats"></div><div class="dashboard-grid"><div class="table-container full-width" id="dash-squads"></div><div class="table-container" id="dash-top"></div><div class="table-container" id="dash-low"></div></div></div>
         <div class="view-page" id="view-timeentry"><div id="timeentry-content"></div></div>
         <div class="view-page" id="view-squads"><div class="squad-tabs" id="squad-tabs"></div><div id="squad-detail"></div></div>
         <div class="view-page" id="view-financial"><div class="squad-tabs" id="fin-tabs"></div><div id="fin-detail"></div></div>
@@ -312,7 +311,7 @@ const ROLES = ['Account','GT','Copy/SM','Designer','Web Designer','Coordenador']
 const SENIORITY = ['','Junior','Pleno','Senior'];
 const HOURS_BASE = 180; // horas mensais para calculo custo/hora
 const MONTHS_PT = ['Janeiro','Fevereiro','Marco','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-const STATUS_LABELS = { active: 'Ativo', negotiation: 'Em negociacao', cancelled: 'Cancelado', expired: 'Vencido' };
+const STATUS_LABELS = { active: 'Ativo', negotiation: 'Em negociacao', cancelled: 'Cancelado' };
 
 // ==================== STATE ====================
 let DATA;
@@ -385,20 +384,20 @@ function getDefaultData() {
             }
         ],
         clients: [
-            { id:1, squadId:1, name:'OMX', fee:1670, status:'active', contractStart:'2025-01', contractEnd:'2026-12', planned:{ 'Account':0.17,'GT':0,'Copy/SM':2.3,'Designer':12.6,'Web Designer':0,'Coordenador':0 } },
-            { id:2, squadId:1, name:'Chamelo', fee:10250, status:'active', contractStart:'2025-03', contractEnd:'2026-06', planned:{ 'Account':0,'GT':0,'Copy/SM':0,'Designer':0,'Web Designer':0,'Coordenador':0 } },
-            { id:3, squadId:1, name:'Gestpar', fee:3360, status:'active', contractStart:'2025-06', contractEnd:'2027-06', planned:{ 'Account':0,'GT':10,'Copy/SM':0,'Designer':0,'Web Designer':0,'Coordenador':10 } },
-            { id:4, squadId:1, name:'MJ Arquitetura', fee:4200, status:'active', contractStart:'2025-01', contractEnd:'2026-12', planned:{ 'Account':1.98,'GT':12.5,'Copy/SM':6.13,'Designer':10.87,'Web Designer':0,'Coordenador':12.5 } },
-            { id:5, squadId:1, name:'Solida Agroconsultoria', fee:6156, status:'active', contractStart:'2025-02', contractEnd:'2027-02', planned:{ 'Account':7.35,'GT':12.5,'Copy/SM':13.95,'Designer':42.03,'Web Designer':0,'Coordenador':12.5 } },
-            { id:6, squadId:1, name:'Guilherme Strapasson', fee:5200, status:'active', contractStart:'2025-04', contractEnd:'2026-10', planned:{ 'Account':0,'GT':30,'Copy/SM':0,'Designer':0,'Web Designer':0,'Coordenador':30 } },
-            { id:7, squadId:2, name:'Pontarollo', fee:790, status:'active', contractStart:'2025-01', contractEnd:'2026-12', planned:{ 'Account':1.35,'GT':0,'Copy/SM':4.68,'Designer':22.08,'Web Designer':0,'Coordenador':0 } },
-            { id:8, squadId:2, name:'Aeroclube', fee:3280, status:'active', contractStart:'2025-03', contractEnd:'2027-03', planned:{ 'Account':1.28,'GT':10,'Copy/SM':6.6,'Designer':12.12,'Web Designer':0,'Coordenador':10 } },
-            { id:9, squadId:2, name:'Instituto Blum', fee:3900, status:'active', contractStart:'2025-05', contractEnd:'2026-11', planned:{ 'Account':0,'GT':10,'Copy/SM':4.53,'Designer':5.9,'Web Designer':0,'Coordenador':10 } },
-            { id:10, squadId:2, name:'Life Premium', fee:4200, status:'active', contractStart:'2025-01', contractEnd:'2027-01', planned:{ 'Account':6.62,'GT':0,'Copy/SM':6.95,'Designer':14.88,'Web Designer':0,'Coordenador':0 } },
-            { id:11, squadId:2, name:'Kelma', fee:3500, status:'active', contractStart:'2025-06', contractEnd:'2026-12', planned:{ 'Account':2.35,'GT':10,'Copy/SM':11.7,'Designer':27.25,'Web Designer':0,'Coordenador':10 } },
-            { id:12, squadId:2, name:'Cemiterio Parque Jardim', fee:6130, status:'active', contractStart:'2025-02', contractEnd:'2027-02', planned:{ 'Account':0.08,'GT':10,'Copy/SM':2.33,'Designer':7.98,'Web Designer':0,'Coordenador':10 } },
-            { id:13, squadId:2, name:'Retibom', fee:4225, status:'active', contractStart:'2025-04', contractEnd:'2026-10', planned:{ 'Account':1.72,'GT':7.5,'Copy/SM':6.98,'Designer':11.4,'Web Designer':0,'Coordenador':7.5 } },
-            { id:14, squadId:2, name:'Costa Ferro', fee:5062, status:'active', contractStart:'2025-01', contractEnd:'2026-08', planned:{ 'Account':0.45,'GT':12.5,'Copy/SM':0.3,'Designer':2.6,'Web Designer':0,'Coordenador':12.5 } }
+            { id:1, squadId:1, name:'OMX', fee:1670, status:'active', planned:{ 'Account':0.17,'GT':0,'Copy/SM':2.3,'Designer':12.6,'Web Designer':0,'Coordenador':0 } },
+            { id:2, squadId:1, name:'Chamelo', fee:10250, status:'active', planned:{ 'Account':0,'GT':0,'Copy/SM':0,'Designer':0,'Web Designer':0,'Coordenador':0 } },
+            { id:3, squadId:1, name:'Gestpar', fee:3360, status:'active', planned:{ 'Account':0,'GT':10,'Copy/SM':0,'Designer':0,'Web Designer':0,'Coordenador':10 } },
+            { id:4, squadId:1, name:'MJ Arquitetura', fee:4200, status:'active', planned:{ 'Account':1.98,'GT':12.5,'Copy/SM':6.13,'Designer':10.87,'Web Designer':0,'Coordenador':12.5 } },
+            { id:5, squadId:1, name:'Solida Agroconsultoria', fee:6156, status:'active', planned:{ 'Account':7.35,'GT':12.5,'Copy/SM':13.95,'Designer':42.03,'Web Designer':0,'Coordenador':12.5 } },
+            { id:6, squadId:1, name:'Guilherme Strapasson', fee:5200, status:'active', planned:{ 'Account':0,'GT':30,'Copy/SM':0,'Designer':0,'Web Designer':0,'Coordenador':30 } },
+            { id:7, squadId:2, name:'Pontarollo', fee:790, status:'active', planned:{ 'Account':1.35,'GT':0,'Copy/SM':4.68,'Designer':22.08,'Web Designer':0,'Coordenador':0 } },
+            { id:8, squadId:2, name:'Aeroclube', fee:3280, status:'active', planned:{ 'Account':1.28,'GT':10,'Copy/SM':6.6,'Designer':12.12,'Web Designer':0,'Coordenador':10 } },
+            { id:9, squadId:2, name:'Instituto Blum', fee:3900, status:'active', planned:{ 'Account':0,'GT':10,'Copy/SM':4.53,'Designer':5.9,'Web Designer':0,'Coordenador':10 } },
+            { id:10, squadId:2, name:'Life Premium', fee:4200, status:'active', planned:{ 'Account':6.62,'GT':0,'Copy/SM':6.95,'Designer':14.88,'Web Designer':0,'Coordenador':0 } },
+            { id:11, squadId:2, name:'Kelma', fee:3500, status:'active', planned:{ 'Account':2.35,'GT':10,'Copy/SM':11.7,'Designer':27.25,'Web Designer':0,'Coordenador':10 } },
+            { id:12, squadId:2, name:'Cemiterio Parque Jardim', fee:6130, status:'active', planned:{ 'Account':0.08,'GT':10,'Copy/SM':2.33,'Designer':7.98,'Web Designer':0,'Coordenador':10 } },
+            { id:13, squadId:2, name:'Retibom', fee:4225, status:'active', planned:{ 'Account':1.72,'GT':7.5,'Copy/SM':6.98,'Designer':11.4,'Web Designer':0,'Coordenador':7.5 } },
+            { id:14, squadId:2, name:'Costa Ferro', fee:5062, status:'active', planned:{ 'Account':0.45,'GT':12.5,'Copy/SM':0.3,'Designer':2.6,'Web Designer':0,'Coordenador':12.5 } }
         ],
         // Team: employee registry
         team: [
@@ -524,21 +523,6 @@ function squadUtil(sqId, month) { const cap = squadCapacity(sqId); return cap > 
 function squadFee(sqId) { return squadClients(sqId).reduce((s,c) => s + c.fee, 0); }
 function squadCSP(sqId, month) { return squadClients(sqId).reduce((s,c) => s + clientCSP(c,month), 0); }
 
-function isExpiringSoon(client) {
-    if (!client.contractEnd || client.status === 'cancelled') return false;
-    const [ey,em] = client.contractEnd.split('-').map(Number);
-    const [cy,cm] = selectedMonth.split('-').map(Number);
-    const endM = ey*12 + em;
-    const curM = cy*12 + cm;
-    return endM - curM <= 2 && endM >= curM;
-}
-
-function isExpired(client) {
-    if (!client.contractEnd) return false;
-    const [ey,em] = client.contractEnd.split('-').map(Number);
-    const [cy,cm] = selectedMonth.split('-').map(Number);
-    return ey*12 + em < cy*12 + cm;
-}
 
 function getAllAlerts() {
     const alerts = [];
@@ -552,7 +536,6 @@ function getAllAlerts() {
         const m = clientMargin(c);
         if (m < 0) alerts.push({ id:`cl-neg-${c.id}`, type:'danger', msg:`${c.name} tem margem NEGATIVA (${fmt.pct(m)})` });
         else if (m < 0.3 && c.fee > 0) alerts.push({ id:`cl-low-${c.id}`, type:'warning', msg:`${c.name} esta com margem baixa (${fmt.pct(m)})` });
-        if (isExpiringSoon(c)) alerts.push({ id:`cl-exp-${c.id}`, type:'info', msg:`Contrato de ${c.name} vence em ${c.contractEnd}` });
         const dev = totalDeviation(c);
         if (dev > 5) alerts.push({ id:`cl-dev-${c.id}`, type:'warning', msg:`${c.name} consumiu ${fmt.hrs(dev)}h a mais que o planejado` });
     });
@@ -800,16 +783,6 @@ function renderDashboard() {
     document.getElementById('dash-top').innerHTML = renderMiniTable('Melhores Margens', sorted.slice(0,5));
     document.getElementById('dash-low').innerHTML = renderMiniTable('Piores Margens', sorted.slice(-5).reverse());
 
-    // Expiring contracts
-    const expiring = DATA.clients.filter(c => isExpiringSoon(c) || isExpired(c));
-    document.getElementById('dash-expiring').innerHTML = expiring.length ? `
-        <div class="table-header"><h3>Contratos Proximos do Vencimento</h3></div>
-        <div class="table-wrapper"><table><thead><tr><th>Cliente</th><th>Squad</th><th class="r">Fee</th><th>Inicio</th><th>Fim</th><th>Status</th></tr></thead><tbody>
-        ${expiring.map(c=>{
-            const sq=DATA.squads.find(s=>s.id===c.squadId);
-            const exp=isExpired(c);
-            return `<tr><td><strong>${c.name}</strong></td><td>${sq?.name||'-'}</td><td class="r">${fmt.brl(c.fee)}</td><td>${c.contractStart||'-'}</td><td>${c.contractEnd||'-'}</td><td><span class="badge-status ${exp?'expired':'negotiation'}">${exp?'Vencido':'Vence em breve'}</span></td></tr>`;
-        }).join('')}</tbody></table></div>` : '';
 }
 
 // ---------- SQUADS ----------
@@ -965,14 +938,12 @@ function renderClients() {
     document.getElementById('clients-list').innerHTML = `
         <div class="table-container">
             <div class="table-header"><h3>Todos os Clientes</h3></div>
-            <div class="table-wrapper"><table><thead><tr><th>Cliente</th><th>Squad</th><th class="r">Fee</th><th class="r">Horas Plan.</th><th class="r">Horas Real.</th><th class="r">Desvio</th><th class="r">CSP</th><th class="r">Margem</th><th>Status</th><th>Contrato</th><th class="c">Acoes</th></tr></thead><tbody>
+            <div class="table-wrapper"><table><thead><tr><th>Cliente</th><th>Squad</th><th class="r">Fee</th><th class="r">Horas Plan.</th><th class="r">Horas Real.</th><th class="r">Desvio</th><th class="r">CSP</th><th class="r">Margem</th><th>Status</th><th class="c">Acoes</th></tr></thead><tbody>
             ${DATA.clients.map(c=>{
                 const sq=DATA.squads.find(s=>s.id===c.squadId);
                 const csp=clientCSP(c,mk), m=clientMargin(c,mk);
                 const planned=clientTotalPlanned(c), actual=hasActuals(c,mk)?clientTotalActual(c,mk):null;
                 const dev = actual !== null ? actual - planned : null;
-                const exp = isExpired(c);
-                const displayStatus = exp && c.status==='active' ? 'expired' : c.status;
                 return `<tr>
                     <td><strong>${c.name}</strong></td>
                     <td>${sq?.name||'-'}</td>
@@ -982,8 +953,7 @@ function renderClients() {
                     <td class="r">${dev!==null?devHtml(dev):'-'}</td>
                     <td class="r">${fmt.brl(csp)}</td>
                     <td class="r"><span class="badge-margin ${marginClass(m)}">${fmt.pct(m)}</span></td>
-                    <td><span class="badge-status ${displayStatus}">${STATUS_LABELS[displayStatus]||displayStatus}</span></td>
-                    <td>${c.contractStart||'?'} a ${c.contractEnd||'?'}</td>
+                    <td><span class="badge-status ${c.status}">${STATUS_LABELS[c.status]||c.status}</span></td>
                     <td class="c"><button class="btn btn-sm" onclick="openModal('edit-client',${c.id})">Editar</button> <button class="btn btn-sm btn-danger" onclick="deleteClient(${c.id})">Excluir</button></td>
                 </tr>`;
             }).join('')}
@@ -1290,10 +1260,6 @@ function openModal(type, id) {
                     <div class="form-group"><label>Status</label><select id="f-status">${Object.entries(STATUS_LABELS).map(([k,v])=>`<option value="${k}" ${c&&c.status===k?'selected':''}>${v}</option>`).join('')}</select></div>
                     <div class="form-group"><label>&nbsp;</label><div></div></div>
                 </div>
-                <div class="form-row">
-                    <div class="form-group"><label>Inicio Contrato</label><input type="month" id="f-start" value="${c?c.contractStart:''}"></div>
-                    <div class="form-group"><label>Fim Contrato</label><input type="month" id="f-end" value="${c?c.contractEnd:''}"></div>
-                </div>
                 <h4 style="margin:20px 0 12px;font-size:14px;color:var(--text-2)">Horas Planejadas por Funcao</h4>
                 <div class="form-row">${ROLES.map(r=>`<div class="form-group"><label>${r}</label><input type="number" step="0.01" min="0" id="f-h-${r.replace(/[\/\s]/g,'_')}" value="${c?getPlanned(c,r):0}"></div>`).join('')}</div>
                 <div class="modal-actions"><button type="button" class="btn" onclick="closeModal()">Cancelar</button><button type="submit" class="btn btn-primary">${c?'Salvar':'Criar'}</button></div>
@@ -1344,17 +1310,15 @@ function saveClient(e, id) {
     const squadId = parseInt(document.getElementById('f-squad').value);
     const fee = parseFloat(document.getElementById('f-fee').value) || 0;
     const status = document.getElementById('f-status').value;
-    const contractStart = document.getElementById('f-start').value || '';
-    const contractEnd = document.getElementById('f-end').value || '';
     const planned = {};
     ROLES.forEach(r => { planned[r] = parseFloat(document.getElementById(`f-h-${r.replace(/[\/\s]/g,'_')}`).value) || 0; });
 
     if (id) {
         const c = DATA.clients.find(x=>x.id===id);
-        Object.assign(c, { name, squadId, fee, status, contractStart, contractEnd, planned });
+        Object.assign(c, { name, squadId, fee, status, planned });
         toast('Cliente atualizado!');
     } else {
-        DATA.clients.push({ id: DATA.nextClientId++, squadId, name, fee, status, contractStart, contractEnd, planned });
+        DATA.clients.push({ id: DATA.nextClientId++, squadId, name, fee, status, planned });
         toast('Cliente criado!');
     }
     saveData(); closeModal(); render();
@@ -1400,12 +1364,12 @@ function deleteSquad(id) {
 // ==================== EXPORT ====================
 function exportData() {
     const mk = monthKey();
-    let csv = 'Squad,Cliente,Fee,Status,Contrato Inicio,Contrato Fim,';
+    let csv = 'Squad,Cliente,Fee,Status,';
     csv += ROLES.map(r=>`Plan ${r}`).join(',') + ',Total Plan,';
     csv += ROLES.map(r=>`Real ${r}`).join(',') + ',Total Real,Desvio,CSP Total,Margem\n';
     DATA.clients.forEach(c => {
         const sq = DATA.squads.find(s=>s.id===c.squadId);
-        csv += `"${sq?.name||''}","${c.name}",${c.fee},${c.status},"${c.contractStart||''}","${c.contractEnd||''}",`;
+        csv += `"${sq?.name||''}","${c.name}",${c.fee},${c.status},`;
         csv += ROLES.map(r=>getPlanned(c,r)).join(',') + `,${clientTotalPlanned(c)},`;
         csv += ROLES.map(r=>getActual(c,r,mk)).join(',') + `,${clientTotalActual(c,mk)},${totalDeviation(c)},${clientCSP(c,mk).toFixed(2)},${(clientMargin(c,mk)*100).toFixed(1)}%\n`;
     });
