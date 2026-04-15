@@ -283,8 +283,8 @@
                 <span class="current-month" id="month-label"></span>
                 <button onclick="changeMonth(1)" title="Proximo mes">&#9654;</button>
             </div>
+            <div id="topbar-context-actions"></div>
             <button class="btn" onclick="exportData()">Exportar</button>
-            <button class="btn btn-primary" onclick="openModal('add-client')">+ Novo Cliente</button>
             <button class="btn btn-danger" onclick="logout()" title="Sair">Sair</button>
         </div>
     </div>
@@ -586,6 +586,17 @@ function showView(view) {
 
 function render() {
     document.getElementById('month-label').textContent = monthLabel();
+    // Context actions per view
+    const ctx = document.getElementById('topbar-context-actions');
+    const actions = {
+        dashboard: '',
+        squads: '<button class="btn btn-primary" onclick="openModal(\'add-squad\')">+ Novo Squad</button><button class="btn" onclick="openModal(\'add-client\')">+ Novo Cliente</button>',
+        financial: '',
+        clients: '<button class="btn btn-primary" onclick="openModal(\'add-client\')">+ Novo Cliente</button>',
+        team: '<button class="btn btn-primary" onclick="openModal(\'add-team\')">+ Novo Colaborador</button>',
+        settings: '<button class="btn btn-primary" onclick="openModal(\'add-squad\')">+ Novo Squad</button>'
+    };
+    ctx.innerHTML = actions[currentView] || '';
     switch(currentView) {
         case 'dashboard': renderDashboard(); break;
         case 'squads': renderSquads(); break;
@@ -807,7 +818,7 @@ function renderClients() {
     const mk = monthKey();
     document.getElementById('clients-list').innerHTML = `
         <div class="table-container">
-            <div class="table-header"><h3>Todos os Clientes</h3><button class="btn btn-primary" onclick="openModal('add-client')">+ Novo Cliente</button></div>
+            <div class="table-header"><h3>Todos os Clientes</h3></div>
             <div class="table-wrapper"><table><thead><tr><th>Cliente</th><th>Squad</th><th class="r">Fee</th><th class="r">Horas Plan.</th><th class="r">Horas Real.</th><th class="r">Desvio</th><th class="r">CSP</th><th class="r">Margem</th><th>Status</th><th>Contrato</th><th class="c">Acoes</th></tr></thead><tbody>
             ${DATA.clients.map(c=>{
                 const sq=DATA.squads.find(s=>s.id===c.squadId);
@@ -858,10 +869,7 @@ function renderTeam() {
         <div class="table-container">
             <div class="table-header">
                 <h3>Cadastro de Colaboradores</h3>
-                <div style="display:flex;gap:8px">
-                    <span style="font-size:12px;color:var(--text-2);align-self:center">Clique para editar</span>
-                    <button class="btn btn-primary" onclick="openModal('add-team')">+ Novo Colaborador</button>
-                </div>
+                <span style="font-size:12px;color:var(--text-2)">Clique para editar</span>
             </div>
             <div class="table-wrapper">
                 <table>
@@ -997,7 +1005,6 @@ function renderSettings() {
             </div>
         `).join('')}
         <div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap">
-            <button class="btn btn-primary" onclick="openModal('add-squad')">+ Novo Squad</button>
             <button class="btn" onclick="changePassword()">Alterar Senha</button>
             <button class="btn btn-danger" onclick="if(confirm('Resetar todos os dados?')){localStorage.removeItem('squad-manager-data-v2');loadData();render();toast('Dados resetados!')}">Resetar Dados</button>
         </div>
