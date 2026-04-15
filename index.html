@@ -246,6 +246,10 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
                 <span>Dashboard</span>
             </div>
+            <div class="nav-item" onclick="showView('timeentry')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span>Lancar Horas</span>
+            </div>
             <div class="nav-item" onclick="showView('squads')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
                 <span>Squads</span>
@@ -290,6 +294,7 @@
     </div>
     <div class="content">
         <div class="view-page active" id="view-dashboard"><div id="alerts-container"></div><div class="stats-grid" id="dashboard-stats"></div><div class="dashboard-grid"><div class="table-container full-width" id="dash-squads"></div><div class="table-container" id="dash-top"></div><div class="table-container" id="dash-low"></div><div class="table-container full-width" id="dash-expiring"></div></div></div>
+        <div class="view-page" id="view-timeentry"><div id="timeentry-content"></div></div>
         <div class="view-page" id="view-squads"><div class="squad-tabs" id="squad-tabs"></div><div id="squad-detail"></div></div>
         <div class="view-page" id="view-financial"><div class="squad-tabs" id="fin-tabs"></div><div id="fin-detail"></div></div>
         <div class="view-page" id="view-clients"><div id="clients-list"></div></div>
@@ -576,9 +581,9 @@ function showView(view) {
     document.querySelectorAll('.view-page').forEach(p => p.classList.remove('active'));
     document.getElementById(`view-${view}`).classList.add('active');
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    const idx = ['dashboard','squads','financial','clients','team','settings'].indexOf(view);
+    const idx = ['dashboard','timeentry','squads','financial','clients','team','settings'].indexOf(view);
     document.querySelectorAll('.nav-item')[idx]?.classList.add('active');
-    const titles = {dashboard:'Dashboard',squads:'Visao por Squad',financial:'Visao Financeira',clients:'Clientes',team:'Equipe',settings:'Configuracoes'};
+    const titles = {dashboard:'Dashboard',timeentry:'Lancar Horas',squads:'Visao por Squad',financial:'Visao Financeira',clients:'Clientes',team:'Equipe',settings:'Configuracoes'};
     document.getElementById('page-title').textContent = titles[view];
     if (!selectedSquadId && DATA.squads.length) selectedSquadId = DATA.squads[0].id;
     render();
@@ -590,6 +595,7 @@ function render() {
     const ctx = document.getElementById('topbar-context-actions');
     const actions = {
         dashboard: '',
+        timeentry: '',
         squads: '<button class="btn btn-primary" onclick="openModal(\'add-squad\')">+ Novo Squad</button><button class="btn" onclick="openModal(\'add-client\')">+ Novo Cliente</button>',
         financial: '',
         clients: '<button class="btn btn-primary" onclick="openModal(\'add-client\')">+ Novo Cliente</button>',
@@ -599,11 +605,151 @@ function render() {
     ctx.innerHTML = actions[currentView] || '';
     switch(currentView) {
         case 'dashboard': renderDashboard(); break;
+        case 'timeentry': renderTimeEntry(); break;
         case 'squads': renderSquads(); break;
         case 'financial': renderFinancial(); break;
         case 'clients': renderClients(); break;
         case 'team': renderTeam(); break;
         case 'settings': renderSettings(); break;
+    }
+}
+
+// ---------- DASHBOARD ----------
+// ---------- TIME ENTRY ----------
+function renderTimeEntry() {
+    const mk = monthKey();
+    const activeClients = DATA.clients.filter(c => c.status !== 'cancelled');
+
+    // Build quick entry cards per squad
+    let html = `
+        <div style="margin-bottom:24px;padding:20px;background:var(--primary-light);border-radius:12px;font-size:14px;color:var(--primary-dark)">
+            <strong>Lancamento rapido</strong> — Preencha as horas realizadas de cada cliente para <strong>${monthLabel()}</strong>. Os valores sao salvos automaticamente ao sair do campo.
+        </div>
+    `;
+
+    DATA.squads.forEach(sq => {
+        const cls = squadClients(sq.id);
+        if (!cls.length) return;
+        const cap = squadCapacity(sq.id);
+        const used = squadTotalHours(sq.id, mk);
+        const u = cap > 0 ? used / cap : 0;
+        const bc = u > 1 ? 'red' : u > 0.85 ? 'yellow' : 'green';
+
+        html += `
+        <div class="table-container">
+            <div class="table-header">
+                <h3>${sq.name}</h3>
+                <div style="display:flex;align-items:center;gap:16px">
+                    <span style="font-size:13px;color:var(--text-2)">${fmt.hrs(used)}h / ${cap}h usadas</span>
+                    <div class="capacity-bar-container" style="width:120px">
+                        <div class="capacity-bar"><div class="capacity-bar-fill ${bc}" style="width:${Math.min(u*100,100)}%"></div></div>
+                        <span class="capacity-label">${fmt.pct(u)}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="min-width:160px">Cliente</th>
+                            ${ROLES.map(r => '<th class="r" style="min-width:90px">' + r + '</th>').join('')}
+                            <th class="r">Total</th>
+                            <th class="r">Planejado</th>
+                            <th class="r">Desvio</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${cls.map(c => {
+                            const planned = clientTotalPlanned(c);
+                            const actual = clientTotalActual(c, mk);
+                            const hasAct = hasActuals(c, mk);
+                            const dev = hasAct ? actual - planned : 0;
+                            return '<tr>' +
+                                '<td><strong>' + c.name + '</strong></td>' +
+                                ROLES.map(r => {
+                                    const val = getActual(c, r, mk);
+                                    const plan = getPlanned(c, r);
+                                    return '<td class="r"><input type="number" step="0.01" min="0" value="' + (val || '') + '" placeholder="' + fmt.num(plan) + '" ' +
+                                        'style="width:70px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;text-align:right;outline:none;transition:border-color 0.15s" ' +
+                                        'onfocus="this.style.borderColor=\'var(--primary)\'" ' +
+                                        'onblur="this.style.borderColor=\'var(--border)\';saveTimeEntry(' + c.id + ',\'' + r + '\',this.value)" ' +
+                                        'onkeydown="if(event.key===\'Enter\'){this.blur();focusNextInput(this)}" ' +
+                                        '></td>';
+                                }).join('') +
+                                '<td class="r"><strong>' + (hasAct ? fmt.hrs(actual) : '-') + '</strong></td>' +
+                                '<td class="r" style="color:var(--text-3)">' + fmt.hrs(planned) + '</td>' +
+                                '<td class="r">' + (hasAct ? devHtml(dev) : '-') + '</td>' +
+                                '</tr>';
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>`;
+    });
+
+    // Log of recent entries
+    const entries = [];
+    if (DATA.actuals[mk]) {
+        Object.entries(DATA.actuals[mk]).forEach(([cid, roles]) => {
+            const c = DATA.clients.find(x => x.id === parseInt(cid));
+            if (!c) return;
+            Object.entries(roles).forEach(([role, val]) => {
+                if (val > 0) entries.push({ client: c.name, role, hours: val });
+            });
+        });
+    }
+
+    if (entries.length) {
+        html += `
+        <div class="table-container">
+            <div class="table-header"><h3>Horas Lancadas em ${monthLabel()}</h3><span style="font-size:12px;color:var(--text-2)">${entries.length} lancamentos</span></div>
+            <div class="table-wrapper"><table><thead><tr><th>Cliente</th><th>Funcao</th><th class="r">Horas</th></tr></thead><tbody>
+            ${entries.map(e => '<tr><td>' + e.client + '</td><td>' + e.role + '</td><td class="r">' + fmt.hrs(e.hours) + 'h</td></tr>').join('')}
+            </tbody></table></div>
+        </div>`;
+    }
+
+    document.getElementById('timeentry-content').innerHTML = html;
+}
+
+function saveTimeEntry(clientId, role, value) {
+    const val = parseFloat(value) || 0;
+    setActual(clientId, role, val);
+    // Re-render totals without losing focus position
+    renderTimeEntryTotals();
+}
+
+function renderTimeEntryTotals() {
+    // Light re-render: just update the totals/desvio cells without rebuilding inputs
+    const mk = monthKey();
+    document.querySelectorAll('#timeentry-content table tbody tr').forEach(tr => {
+        // Skip if it's not a client row
+        const cells = tr.querySelectorAll('td');
+        if (cells.length < ROLES.length + 4) return;
+        const nameCell = cells[0]?.querySelector('strong');
+        if (!nameCell) return;
+        const clientName = nameCell.textContent;
+        const c = DATA.clients.find(x => x.name === clientName);
+        if (!c) return;
+
+        const actual = clientTotalActual(c, mk);
+        const planned = clientTotalPlanned(c);
+        const hasAct = hasActuals(c, mk);
+        const dev = hasAct ? actual - planned : 0;
+
+        const totalIdx = ROLES.length + 1;
+        cells[totalIdx].innerHTML = '<strong>' + (hasAct ? fmt.hrs(actual) : '-') + '</strong>';
+        cells[totalIdx + 1].innerHTML = fmt.hrs(planned);
+        cells[totalIdx + 2].innerHTML = hasAct ? devHtml(dev) : '-';
+    });
+}
+
+function focusNextInput(current) {
+    const inputs = Array.from(document.querySelectorAll('#timeentry-content input[type="number"]'));
+    const idx = inputs.indexOf(current);
+    if (idx >= 0 && idx < inputs.length - 1) {
+        inputs[idx + 1].focus();
+        inputs[idx + 1].select();
     }
 }
 
