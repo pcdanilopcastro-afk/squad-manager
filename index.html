@@ -810,22 +810,22 @@ function renderSquads() {
 
         <!-- PLANNED HOURS TABLE -->
         <div class="table-container">
-            <div class="table-header"><h3>Horas Planejadas</h3><span style="font-size:12px;color:var(--text-2)">Clique para editar</span></div>
+            <div class="table-header"><h3>Horas Planejadas</h3><span style="font-size:12px;color:var(--text-2)">Edite em Clientes</span></div>
             <div class="table-wrapper"><table><thead><tr><th>Cliente</th>${ROLES.map(r=>`<th class="r">${r}</th>`).join('')}<th class="r">Total</th><th class="r">% do Squad</th></tr></thead><tbody>
-            ${cls.map(c=>{const ch=clientTotalPlanned(c); const sqCap=squadCapacity(sq.id); const pct=sqCap>0?ch/sqCap:0; return `<tr><td><strong>${c.name}</strong></td>${ROLES.map(r=>`<td class="r editable" onclick="startEditPlanned(this,${c.id},'${r}')">${fmt.num(getPlanned(c,r))}</td>`).join('')}<td class="r"><strong>${fmt.hrs(ch)}</strong></td><td class="r"><span class="badge-margin ${pct>0.3?'red':pct>0.15?'yellow':'green'}">${fmt.pct(pct)}</span></td></tr>`;}).join('')}
+            ${cls.map(c=>{const ch=clientTotalPlanned(c); const sqCap=squadCapacity(sq.id); const pct=sqCap>0?ch/sqCap:0; return `<tr><td><strong>${c.name}</strong></td>${ROLES.map(r=>`<td class="r">${fmt.num(getPlanned(c,r))}</td>`).join('')}<td class="r"><strong>${fmt.hrs(ch)}</strong></td><td class="r"><span class="badge-margin ${pct>0.3?'red':pct>0.15?'yellow':'green'}">${fmt.pct(pct)}</span></td></tr>`;}).join('')}
             <tr class="total-row"><td>TOTAL</td>${ROLES.map(r=>`<td class="r">${fmt.hrs(cls.reduce((s,c)=>s+getPlanned(c,r),0))}</td>`).join('')}<td class="r">${fmt.hrs(cls.reduce((s,c)=>s+clientTotalPlanned(c),0))}</td><td class="r">${fmt.pct(u)}</td></tr>
             </tbody></table></div>
         </div>
 
         <!-- ACTUAL HOURS TABLE -->
         <div class="table-container">
-            <div class="table-header"><h3>Horas Realizadas - ${monthLabel()}</h3><span style="font-size:12px;color:var(--text-2)">Clique para registrar horas reais</span></div>
+            <div class="table-header"><h3>Horas Realizadas - ${monthLabel()}</h3><span style="font-size:12px;color:var(--text-2)">Edite em Registro Diario</span></div>
             <div class="table-wrapper"><table><thead><tr><th>Cliente</th>${ROLES.map(r=>`<th class="r">${r}</th>`).join('')}<th class="r">Total</th><th class="r">% do Squad</th><th class="r">Desvio</th></tr></thead><tbody>
             ${cls.map(c=>{
                 const dev = totalDeviation(c);
                 const actH = hasActuals(c,mk) ? clientTotalActual(c,mk) : 0;
                 const sqCap2=squadCapacity(sq.id); const actPct = sqCap2>0 ? actH/sqCap2 : 0;
-                return `<tr><td><strong>${c.name}</strong></td>${ROLES.map(r=>`<td class="r editable" onclick="startEditActual(this,${c.id},'${r}')">${hasActuals(c,mk)?fmt.num(getActual(c,r,mk)):'-'}</td>`).join('')}<td class="r">${hasActuals(c,mk)?fmt.hrs(actH):'-'}</td><td class="r">${hasActuals(c,mk)?`<span class="badge-margin ${actPct>0.3?'red':actPct>0.15?'yellow':'green'}">${fmt.pct(actPct)}</span>`:'-'}</td><td class="r">${hasActuals(c,mk)?devHtml(dev):'-'}</td></tr>`;
+                return `<tr><td><strong>${c.name}</strong></td>${ROLES.map(r=>`<td class="r">${hasActuals(c,mk)?fmt.num(getActual(c,r,mk)):'-'}</td>`).join('')}<td class="r">${hasActuals(c,mk)?fmt.hrs(actH):'-'}</td><td class="r">${hasActuals(c,mk)?`<span class="badge-margin ${actPct>0.3?'red':actPct>0.15?'yellow':'green'}">${fmt.pct(actPct)}</span>`:'-'}</td><td class="r">${hasActuals(c,mk)?devHtml(dev):'-'}</td></tr>`;
             }).join('')}
             ${anyActuals ? (()=>{const totalAct=cls.filter(c=>hasActuals(c,mk)).reduce((s,c)=>s+clientTotalActual(c,mk),0); const sqCapAct=squadCapacity(sq.id); const totalActPct=sqCapAct>0?totalAct/sqCapAct:0; return `<tr class="total-row"><td>TOTAL</td>${ROLES.map(r=>{const act=cls.filter(c=>hasActuals(c,mk)).reduce((s,c)=>s+getActual(c,r,mk),0); return `<td class="r">${fmt.hrs(act)}</td>`;}).join('')}<td class="r">${fmt.hrs(totalAct)}</td><td class="r">${fmt.pct(totalActPct)}</td><td class="r">${devHtml(cls.filter(c=>hasActuals(c,mk)).reduce((s,c)=>s+totalDeviation(c),0))}</td></tr>`;})() : ''}
             </tbody></table></div>
