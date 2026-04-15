@@ -247,7 +247,7 @@
             </div>
             <div class="nav-item" onclick="showView('timeentry')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                <span>Lancar Horas</span>
+                <span>Registro Diario</span>
             </div>
             <div class="nav-item" onclick="showView('squads')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
@@ -421,7 +421,8 @@ function getDefaultData() {
         // Monthly actual hours: { "2026-04": { clientId: { role: hours } } }
         actuals: {},
         nextClientId: 15,
-        nextSquadId: 3
+        nextSquadId: 3,
+        healthyMargin: 0.5
     };
 }
 
@@ -430,6 +431,7 @@ function loadData() {
     DATA = saved ? JSON.parse(saved) : getDefaultData();
     if (!DATA.actuals) DATA.actuals = {};
     if (!DATA.team) { DATA.team = getDefaultData().team; DATA.nextTeamId = 16; saveData(); }
+    if (DATA.healthyMargin === undefined) DATA.healthyMargin = 0.5;
 }
 
 function getTeamMember(name) {
@@ -496,7 +498,7 @@ function clientTotalHours(c, month) { return ROLES.reduce((s,r) => s + getHours(
 function clientCSPByRole(c, role, month) { return getHours(c, role, month) * getCost(c.squadId, role); }
 function clientCSP(c, month) { return ROLES.reduce((s,r) => s + clientCSPByRole(c,r,month), 0); }
 function clientMargin(c, month) { return c.fee > 0 ? (c.fee - clientCSP(c,month)) / c.fee : 0; }
-function marginClass(m) { return m > 0.5 ? 'green' : m >= 0.3 ? 'yellow' : 'red'; }
+function marginClass(m) { const h = DATA.healthyMargin; return m >= h ? 'green' : m >= h * 0.6 ? 'yellow' : 'red'; }
 
 function deviation(client, role) {
     const mk = monthKey();
@@ -535,7 +537,7 @@ function getAllAlerts() {
         if (c.status === 'cancelled') return;
         const m = clientMargin(c);
         if (m < 0) alerts.push({ id:`cl-neg-${c.id}`, type:'danger', msg:`${c.name} tem margem NEGATIVA (${fmt.pct(m)})` });
-        else if (m < 0.3 && c.fee > 0) alerts.push({ id:`cl-low-${c.id}`, type:'warning', msg:`${c.name} esta com margem baixa (${fmt.pct(m)})` });
+        else if (m < DATA.healthyMargin && c.fee > 0) alerts.push({ id:`cl-low-${c.id}`, type:'warning', msg:`${c.name} esta abaixo da margem saudavel de ${fmt.pct(DATA.healthyMargin)} (atual: ${fmt.pct(m)})` });
         const dev = totalDeviation(c);
         if (dev > 5) alerts.push({ id:`cl-dev-${c.id}`, type:'warning', msg:`${c.name} consumiu ${fmt.hrs(dev)}h a mais que o planejado` });
     });
@@ -566,7 +568,7 @@ function showView(view) {
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     const idx = ['dashboard','timeentry','squads','financial','clients','team','settings'].indexOf(view);
     document.querySelectorAll('.nav-item')[idx]?.classList.add('active');
-    const titles = {dashboard:'Dashboard',timeentry:'Lancar Horas',squads:'Visao por Squad',financial:'Visao Financeira',clients:'Clientes',team:'Equipe',settings:'Configuracoes'};
+    const titles = {dashboard:'Dashboard',timeentry:'Registro Diario',squads:'Visao por Squad',financial:'Visao Financeira',clients:'Clientes',team:'Equipe',settings:'Configuracoes'};
     document.getElementById('page-title').textContent = titles[view];
     if (!selectedSquadId && DATA.squads.length) selectedSquadId = DATA.squads[0].id;
     render();
@@ -752,7 +754,7 @@ function renderDashboard() {
     document.getElementById('dashboard-stats').innerHTML = `
         <div class="stat-card"><div class="label">Receita Total (Fee)</div><div class="value">${fmt.brl(totalFee)}</div><div class="change" style="color:var(--text-3)">${activeClients.length} clientes ativos</div></div>
         <div class="stat-card"><div class="label">CSP Total</div><div class="value">${fmt.brl(totalCSP)}</div></div>
-        <div class="stat-card"><div class="label">Margem Media</div><div class="value" style="color:${avgMargin>0.5?'var(--green)':avgMargin>=0.3?'var(--yellow)':'var(--red)'}">${fmt.pct(avgMargin)}</div>
+        <div class="stat-card"><div class="label">Margem Media</div><div class="value" style="color:${marginClass(avgMargin)==='green'?'var(--green)':marginClass(avgMargin)==='yellow'?'var(--yellow)':'var(--red)'}">${fmt.pct(avgMargin)}</div>
             ${Math.abs(marginDelta)>0.001 ? `<div class="change ${marginDelta>0?'positive':'negative'}">${marginDelta>0?'&#9650;':'&#9660;'} ${fmt.pct(Math.abs(marginDelta))} vs ${fmt.monthShort(pmk)}</div>` : ''}
         </div>
         <div class="stat-card"><div class="label">Lucro Bruto</div><div class="value" style="color:var(--green)">${fmt.brl(totalFee-totalCSP)}</div></div>
@@ -808,7 +810,7 @@ function renderSquads() {
 
         <!-- PLANNED HOURS TABLE -->
         <div class="table-container">
-            <div class="table-header"><h3>Horas Planejadas (Contrato)</h3><span style="font-size:12px;color:var(--text-2)">Clique para editar</span></div>
+            <div class="table-header"><h3>Horas Planejadas</h3><span style="font-size:12px;color:var(--text-2)">Clique para editar</span></div>
             <div class="table-wrapper"><table><thead><tr><th>Cliente</th>${ROLES.map(r=>`<th class="r">${r}</th>`).join('')}<th class="r">Total</th><th class="r">% do Squad</th></tr></thead><tbody>
             ${cls.map(c=>{const ch=clientTotalPlanned(c); const sqCap=squadCapacity(sq.id); const pct=sqCap>0?ch/sqCap:0; return `<tr><td><strong>${c.name}</strong></td>${ROLES.map(r=>`<td class="r editable" onclick="startEditPlanned(this,${c.id},'${r}')">${fmt.num(getPlanned(c,r))}</td>`).join('')}<td class="r"><strong>${fmt.hrs(ch)}</strong></td><td class="r"><span class="badge-margin ${pct>0.3?'red':pct>0.15?'yellow':'green'}">${fmt.pct(pct)}</span></td></tr>`;}).join('')}
             <tr class="total-row"><td>TOTAL</td>${ROLES.map(r=>`<td class="r">${fmt.hrs(cls.reduce((s,c)=>s+getPlanned(c,r),0))}</td>`).join('')}<td class="r">${fmt.hrs(cls.reduce((s,c)=>s+clientTotalPlanned(c),0))}</td><td class="r">${fmt.pct(u)}</td></tr>
@@ -842,19 +844,21 @@ function renderSquads() {
 }
 
 function buildPricingTable(cls, mk) {
+    const h = DATA.healthyMargin;
+    const hPct = (h*100).toFixed(0) + '%';
     const defasados = cls.filter(c => {
         const csp = clientCSP(c, mk);
-        return csp > 0 && c.fee < csp / 0.5;
+        return csp > 0 && c.fee < csp / (1 - h);
     });
     if (!defasados.length) {
-        return '<div class="table-container"><div class="table-header"><h3>Analise de Pricing</h3></div><div style="padding:32px;text-align:center;color:var(--green-text);font-size:14px">Todos os clientes estao com fee saudavel para margem de 50%.</div></div>';
+        return '<div class="table-container"><div class="table-header"><h3>Analise de Pricing</h3></div><div style="padding:32px;text-align:center;color:var(--green-text);font-size:14px">Todos os clientes estao com fee saudavel para margem de ' + hPct + '.</div></div>';
     }
     const defTotalCSP = defasados.reduce((s,c) => s + clientCSP(c,mk), 0);
     const defTotalFee = defasados.reduce((s,c) => s + c.fee, 0);
-    const defTotalSugerido = defTotalCSP / 0.5;
+    const defTotalSugerido = defTotalCSP / (1 - h);
     let rows = defasados.map(c => {
         const csp = clientCSP(c,mk), m = clientMargin(c,mk), hrs = clientTotalHours(c,mk);
-        const feeSugerido = csp / 0.5;
+        const feeSugerido = csp / (1 - h);
         const reajuste = feeSugerido - c.fee;
         return '<tr>' +
             '<td><strong>' + c.name + '</strong></td>' +
@@ -875,8 +879,8 @@ function buildPricingTable(cls, mk) {
         '<td class="r"><span class="dev-positive">+' + fmt.brl(defTotalSugerido - defTotalFee) + '</span></td>' +
         '<td></td></tr>';
     return '<div class="table-container">' +
-        '<div class="table-header"><h3>Clientes Defasados - Precisam de Reajuste</h3><span style="font-size:12px;color:var(--red)">' + defasados.length + ' cliente' + (defasados.length>1?'s':'') + ' com fee abaixo do ideal para 50% de margem</span></div>' +
-        '<div class="table-wrapper"><table><thead><tr><th>Cliente</th><th class="r">Horas</th><th class="r">CSP Total</th><th class="r">Fee Atual</th><th class="r">Fee Sugerido (50%)</th><th class="r">Reajuste Necessario</th><th class="r">Margem Atual</th></tr></thead><tbody>' +
+        '<div class="table-header"><h3>Clientes Defasados - Precisam de Reajuste</h3><span style="font-size:12px;color:var(--red)">' + defasados.length + ' cliente' + (defasados.length>1?'s':'') + ' com fee abaixo do ideal para ' + hPct + ' de margem</span></div>' +
+        '<div class="table-wrapper"><table><thead><tr><th>Cliente</th><th class="r">Horas</th><th class="r">CSP Total</th><th class="r">Fee Atual</th><th class="r">Fee Sugerido (' + hPct + ')</th><th class="r">Reajuste Necessario</th><th class="r">Margem Atual</th></tr></thead><tbody>' +
         rows + '</tbody></table></div></div>';
 }
 
@@ -895,7 +899,7 @@ function renderFinancial() {
             <div class="info-item"><div class="label">Fee Total</div><div class="value">${fmt.brl(totalFee)}</div></div>
             <div class="info-item"><div class="label">CSP Total</div><div class="value">${fmt.brl(totalCSP_val)}</div></div>
             <div class="info-item"><div class="label">Lucro Bruto</div><div class="value" style="color:var(--green)">${fmt.brl(totalFee-totalCSP_val)}</div></div>
-            <div class="info-item"><div class="label">Margem Media</div><div class="value" style="color:${avgM>0.5?'var(--green)':avgM>=0.3?'var(--yellow)':'var(--red)'}">${fmt.pct(avgM)}</div></div>
+            <div class="info-item"><div class="label">Margem Media</div><div class="value" style="color:${marginClass(avgM)==='green'?'var(--green)':marginClass(avgM)==='yellow'?'var(--yellow)':'var(--red)'}">${fmt.pct(avgM)}</div></div>
         </div>
 
         <!-- CSP por Area -->
@@ -1120,6 +1124,17 @@ function renderSettings() {
                 </div>
             </div>
         `).join('')}
+        <div class="table-container">
+            <div class="table-header"><h3>Parametros Globais</h3></div>
+            <div style="padding:20px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+                <div style="font-size:13px;color:var(--text-2)">Margem saudavel:</div>
+                <div style="display:flex;align-items:center;gap:8px">
+                    <input type="range" min="10" max="80" step="5" value="${DATA.healthyMargin*100}" oninput="document.getElementById('margin-val').textContent=this.value+'%'" onchange="DATA.healthyMargin=this.value/100;saveData();render();toast('Margem saudavel atualizada para '+this.value+'%')" style="width:200px;accent-color:var(--primary)">
+                    <strong id="margin-val" style="min-width:40px">${(DATA.healthyMargin*100).toFixed(0)}%</strong>
+                </div>
+                <div style="font-size:12px;color:var(--text-3)">Define o limite para alertas, cores de margem e fee sugerido na analise de pricing</div>
+            </div>
+        </div>
         <div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap">
             <button class="btn" onclick="changePassword()">Alterar Senha</button>
             <button class="btn btn-danger" onclick="if(confirm('Resetar todos os dados?')){localStorage.removeItem('squad-manager-data-v2');loadData();render();toast('Dados resetados!')}">Resetar Dados</button>
