@@ -737,17 +737,56 @@ function renderFinancial() {
             </tbody></table></div>
         </div>
 
+        <!-- Pricing: Fee Sugerido -->
+        <div class="table-container">
+            <div class="table-header"><h3>Analise de Pricing - Fee vs Custo Real</h3><span style="font-size:12px;color:var(--text-2)">Fee sugerido para margem de 50%</span></div>
+            <div class="table-wrapper"><table><thead><tr><th>Cliente</th><th class="r">Horas</th><th class="r">CSP Total</th><th class="r">Fee Atual</th><th class="r">Fee Sugerido</th><th class="r">Diferenca</th><th class="r">Margem Atual</th><th class="r">Situacao</th></tr></thead><tbody>
+            ${cls.map(c=>{
+                const csp=clientCSP(c,mk), m=clientMargin(c,mk), hrs=clientTotalHours(c,mk);
+                const feeSugerido = csp / 0.5; // CSP / (1 - 0.50) = CSP * 2
+                const diff = c.fee - feeSugerido;
+                const situacao = diff >= 0 ? 'Saudavel' : 'Defasado';
+                const sitClass = diff >= 0 ? 'green' : 'red';
+                return `<tr>
+                    <td><strong>${c.name}</strong></td>
+                    <td class="r">${fmt.hrs(hrs)}h</td>
+                    <td class="r">${fmt.brl(csp)}</td>
+                    <td class="r">${fmt.brl(c.fee)}</td>
+                    <td class="r"><strong>${fmt.brl(feeSugerido)}</strong></td>
+                    <td class="r"><span class="${diff>=0?'dev-negative':'dev-positive'}">${diff>=0?'+':''}${fmt.brl(diff)}</span></td>
+                    <td class="r"><span class="badge-margin ${marginClass(m)}">${fmt.pct(m)}</span></td>
+                    <td class="r"><span class="badge-margin ${sitClass}">${situacao}</span></td>
+                </tr>`;
+            }).join('')}
+            ${(()=>{
+                const totalHrs=squadTotalHours(sq.id,mk);
+                const totalFeeSugerido = totalCSP_val / 0.5;
+                const totalDiff = totalFee - totalFeeSugerido;
+                return `<tr class="total-row">
+                    <td>TOTAL</td>
+                    <td class="r">${fmt.hrs(totalHrs)}h</td>
+                    <td class="r">${fmt.brl(totalCSP_val)}</td>
+                    <td class="r">${fmt.brl(totalFee)}</td>
+                    <td class="r"><strong>${fmt.brl(totalFeeSugerido)}</strong></td>
+                    <td class="r"><span class="${totalDiff>=0?'dev-negative':'dev-positive'}">${totalDiff>=0?'+':''}${fmt.brl(totalDiff)}</span></td>
+                    <td class="r"><span class="badge-margin ${marginClass(avgM)}">${fmt.pct(avgM)}</span></td>
+                    <td></td>
+                </tr>`;
+            })()}
+            </tbody></table></div>
+        </div>
+
         <!-- Detalhamento por Cliente -->
         <div class="table-container">
-            <div class="table-header"><h3>Detalhamento por Cliente - ${monthLabel()}</h3></div>
-            <div class="table-wrapper"><table><thead><tr><th>Cliente</th><th class="r">Fee</th><th class="r">Horas</th><th class="r">CSP Total</th><th class="r">Custo/Hora</th><th class="r">Margem</th><th class="r">Status</th>${ROLES.map(r=>`<th class="r">CSP ${r}</th>`).join('')}</tr></thead><tbody>
+            <div class="table-header"><h3>Detalhamento CSP por Funcao - ${monthLabel()}</h3></div>
+            <div class="table-wrapper"><table><thead><tr><th>Cliente</th><th class="r">Fee</th><th class="r">Horas</th><th class="r">CSP Total</th><th class="r">Custo/Hora</th><th class="r">Margem</th>${ROLES.map(r=>`<th class="r">CSP ${r}</th>`).join('')}</tr></thead><tbody>
             ${cls.map(c=>{
                 const csp=clientCSP(c,mk), m=clientMargin(c,mk), hrs=clientTotalHours(c,mk);
                 const cph=hrs>0?csp/hrs:0;
-                return `<tr><td><strong>${c.name}</strong></td><td class="r editable wide" onclick="startEditFee(this,${c.id})">${fmt.brl(c.fee)}</td><td class="r">${fmt.hrs(hrs)}h</td><td class="r">${fmt.brl(csp)}</td><td class="r">${fmt.brl(cph)}</td><td class="r"><span class="badge-margin ${marginClass(m)}">${fmt.pct(m)}</span></td><td class="r"><span class="badge-status ${c.status}">${STATUS_LABELS[c.status]||c.status}</span></td>${ROLES.map(r=>`<td class="r">${fmt.brl(clientCSPByRole(c,r,mk))}</td>`).join('')}</tr>`;
+                return `<tr><td><strong>${c.name}</strong></td><td class="r editable wide" onclick="startEditFee(this,${c.id})">${fmt.brl(c.fee)}</td><td class="r">${fmt.hrs(hrs)}h</td><td class="r">${fmt.brl(csp)}</td><td class="r">${fmt.brl(cph)}</td><td class="r"><span class="badge-margin ${marginClass(m)}">${fmt.pct(m)}</span></td>${ROLES.map(r=>`<td class="r">${fmt.brl(clientCSPByRole(c,r,mk))}</td>`).join('')}</tr>`;
             }).join('')}
             ${(()=>{const totalHrs=squadTotalHours(sq.id,mk); const avgCph=totalHrs>0?totalCSP_val/totalHrs:0; return `
-            <tr class="total-row"><td>TOTAL</td><td class="r">${fmt.brl(totalFee)}</td><td class="r">${fmt.hrs(totalHrs)}h</td><td class="r">${fmt.brl(totalCSP_val)}</td><td class="r">${fmt.brl(avgCph)}</td><td class="r"><span class="badge-margin ${marginClass(avgM)}">${fmt.pct(avgM)}</span></td><td></td>${ROLES.map(r=>`<td class="r">${fmt.brl(cls.reduce((s,c)=>s+clientCSPByRole(c,r,mk),0))}</td>`).join('')}</tr>`;})()}
+            <tr class="total-row"><td>TOTAL</td><td class="r">${fmt.brl(totalFee)}</td><td class="r">${fmt.hrs(totalHrs)}h</td><td class="r">${fmt.brl(totalCSP_val)}</td><td class="r">${fmt.brl(avgCph)}</td><td class="r"><span class="badge-margin ${marginClass(avgM)}">${fmt.pct(avgM)}</span></td>${ROLES.map(r=>`<td class="r">${fmt.brl(cls.reduce((s,c)=>s+clientCSPByRole(c,r,mk),0))}</td>`).join('')}</tr>`;})()}
             </tbody></table></div>
         </div>
     `;
