@@ -119,7 +119,6 @@
 
         .badge-status { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
         .badge-status.active { background: var(--green-bg); color: var(--green-text); }
-        .badge-status.negotiation { background: var(--yellow-bg); color: var(--yellow-text); }
         .badge-status.cancelled { background: var(--red-bg); color: var(--red-text); }
 
         /* Deviation indicators */
@@ -211,6 +210,49 @@
         /* Comparison row */
         .comparison-row { font-size: 11px; color: var(--text-3); font-style: italic; }
         .comparison-row td { padding: 4px 14px !important; border-bottom: 1px dashed var(--border) !important; }
+
+        /* Onboarding card */
+        .onboarding-card { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: #fff; border-radius: 14px; padding: 28px 32px; margin-bottom: 24px; display: flex; align-items: center; gap: 24px; box-shadow: 0 4px 16px rgba(59,130,246,0.15); }
+        .onboarding-card .onb-icon { width: 56px; height: 56px; background: rgba(255,255,255,0.15); border-radius: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .onboarding-card .onb-icon svg { width: 28px; height: 28px; stroke: #fff; }
+        .onboarding-card .onb-body { flex: 1; }
+        .onboarding-card .onb-step { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.8; }
+        .onboarding-card .onb-title { font-size: 18px; font-weight: 700; margin-top: 4px; }
+        .onboarding-card .onb-desc { font-size: 13px; opacity: 0.9; margin-top: 4px; }
+        .onboarding-card .onb-cta { background: #fff; color: var(--primary-dark); padding: 10px 20px; border-radius: 8px; border: none; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+        .onboarding-card .onb-cta:hover { background: var(--primary-light); }
+
+        /* Section divider (inside unified squad view) */
+        .section-divider { margin: 32px 0 20px; padding-top: 20px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+        .section-divider .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-2); }
+
+        /* Collapsible details */
+        details.collapsible { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 24px; overflow: hidden; }
+        details.collapsible summary { padding: 18px 24px; cursor: pointer; font-weight: 600; font-size: 15px; display: flex; justify-content: space-between; align-items: center; list-style: none; user-select: none; }
+        details.collapsible summary::-webkit-details-marker { display: none; }
+        details.collapsible summary::after { content: '+'; font-size: 20px; color: var(--text-2); }
+        details.collapsible[open] summary::after { content: '−'; }
+        details.collapsible summary:hover { background: var(--surface-2); }
+        details.collapsible .collapsible-body { border-top: 1px solid var(--border); }
+
+        /* Sticky thead for Registro Diario */
+        .sticky-head thead th { position: sticky; top: 0; z-index: 2; }
+
+        /* Empty state */
+        .empty-state { text-align: center; padding: 48px 24px; color: var(--text-2); }
+        .empty-state .empty-icon { width: 56px; height: 56px; margin: 0 auto 16px; background: var(--surface-2); border-radius: 14px; display: flex; align-items: center; justify-content: center; }
+        .empty-state .empty-icon svg { width: 28px; height: 28px; stroke: var(--text-3); }
+        .empty-state .empty-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+        .empty-state .empty-desc { font-size: 13px; margin-bottom: 16px; }
+
+        /* Search/filter input */
+        .filter-bar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+        .filter-bar input[type="search"], .filter-bar select { padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 13px; outline: none; background: var(--surface); }
+        .filter-bar input[type="search"]:focus, .filter-bar select:focus { border-color: var(--primary); }
+        .filter-bar input[type="search"] { min-width: 240px; }
+
+        /* Hide month selector on non-temporal views */
+        body.no-month #month-selector { display: none; }
     </style>
 </head>
 <body>
@@ -240,22 +282,22 @@
     </div>
     <nav class="sidebar-nav">
         <div class="nav-section">
-            <div class="nav-section-title">Principal</div>
+            <div class="nav-section-title">Operar</div>
             <div class="nav-item active" onclick="showView('dashboard')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
                 <span>Dashboard</span>
+                <span class="badge" id="sidebar-alert-badge" style="display:none"></span>
             </div>
             <div class="nav-item" onclick="showView('timeentry')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                 <span>Registro Diario</span>
             </div>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">Gerenciar</div>
             <div class="nav-item" onclick="showView('squads')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
                 <span>Squads</span>
-            </div>
-            <div class="nav-item" onclick="showView('financial')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-                <span>Financeiro</span>
             </div>
             <div class="nav-item" onclick="showView('clients')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -267,7 +309,7 @@
             </div>
         </div>
         <div class="nav-section">
-            <div class="nav-section-title">Configuracao</div>
+            <div class="nav-section-title">Configurar</div>
             <div class="nav-item" onclick="showView('settings')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
                 <span>Configuracoes</span>
@@ -281,21 +323,19 @@
     <div class="topbar">
         <h2 id="page-title">Dashboard</h2>
         <div class="topbar-actions">
-            <div class="month-selector">
+            <div class="month-selector" id="month-selector">
                 <button onclick="changeMonth(-1)" title="Mes anterior">&#9664;</button>
                 <span class="current-month" id="month-label"></span>
                 <button onclick="changeMonth(1)" title="Proximo mes">&#9654;</button>
             </div>
             <div id="topbar-context-actions"></div>
-            <button class="btn" onclick="exportData()">Exportar</button>
             <button class="btn btn-danger" onclick="logout()" title="Sair">Sair</button>
         </div>
     </div>
     <div class="content">
-        <div class="view-page active" id="view-dashboard"><div id="alerts-container"></div><div class="stats-grid" id="dashboard-stats"></div><div class="dashboard-grid"><div class="table-container full-width" id="dash-squads"></div><div class="table-container" id="dash-top"></div><div class="table-container" id="dash-low"></div></div></div>
+        <div class="view-page active" id="view-dashboard"><div id="onboarding-container"></div><div id="alerts-container"></div><div class="stats-grid" id="dashboard-stats"></div><div class="dashboard-grid"><div class="table-container full-width" id="dash-squads"></div><div class="table-container full-width" id="dash-margins"></div></div></div>
         <div class="view-page" id="view-timeentry"><div id="timeentry-content"></div></div>
         <div class="view-page" id="view-squads"><div class="squad-tabs" id="squad-tabs"></div><div id="squad-detail"></div></div>
-        <div class="view-page" id="view-financial"><div class="squad-tabs" id="fin-tabs"></div><div id="fin-detail"></div></div>
         <div class="view-page" id="view-clients"><div id="clients-list"></div></div>
         <div class="view-page" id="view-team"><div id="team-content"></div></div>
         <div class="view-page" id="view-settings"><div id="settings-content"></div></div>
@@ -311,7 +351,8 @@ const ROLES = ['Account','GT','Copy/SM','Designer','Web Designer','Coordenador']
 const SENIORITY = ['','Junior','Pleno','Senior'];
 const HOURS_BASE = 180; // horas mensais para calculo custo/hora
 const MONTHS_PT = ['Janeiro','Fevereiro','Marco','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-const STATUS_LABELS = { active: 'Ativo', negotiation: 'Em negociacao', cancelled: 'Cancelado' };
+const STATUS_LABELS = { active: 'Ativo', cancelled: 'Cancelado' };
+const NON_TEMPORAL_VIEWS = new Set(['clients', 'team', 'settings']);
 
 // ==================== STATE ====================
 let DATA;
@@ -553,10 +594,15 @@ const fmt = {
     monthShort: mk => { const [y,m]=mk.split('-').map(Number); return MONTHS_PT[m-1].slice(0,3)+'/'+y; }
 };
 
-function devHtml(val) {
+function devHtml(val, planned) {
     if (Math.abs(val) < 0.01) return '<span class="dev-zero">-</span>';
     const sign = val > 0 ? '+' : '';
-    const cls = val > 0 ? 'dev-positive' : 'dev-negative';
+    // Relative tolerance: +-10% of planned is neutral (within expected variation)
+    const tol = planned !== undefined && planned > 0 ? planned * 0.1 : 1;
+    let cls;
+    if (Math.abs(val) < tol) cls = 'dev-zero';
+    else if (val > 0) cls = 'dev-positive';
+    else cls = 'dev-negative';
     return `<span class="${cls}">${sign}${fmt.hrs(val)}</span>`;
 }
 
@@ -566,24 +612,25 @@ function showView(view) {
     document.querySelectorAll('.view-page').forEach(p => p.classList.remove('active'));
     document.getElementById(`view-${view}`).classList.add('active');
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    const idx = ['dashboard','timeentry','squads','financial','clients','team','settings'].indexOf(view);
+    const idx = ['dashboard','timeentry','squads','clients','team','settings'].indexOf(view);
     document.querySelectorAll('.nav-item')[idx]?.classList.add('active');
-    const titles = {dashboard:'Dashboard',timeentry:'Registro Diario',squads:'Visao por Squad',financial:'Visao Financeira',clients:'Clientes',team:'Equipe',settings:'Configuracoes'};
+    const titles = {dashboard:'Dashboard',timeentry:'Registro Diario',squads:'Squads',clients:'Clientes',team:'Equipe',settings:'Configuracoes'};
     document.getElementById('page-title').textContent = titles[view];
+    document.body.classList.toggle('no-month', NON_TEMPORAL_VIEWS.has(view));
     if (!selectedSquadId && DATA.squads.length) selectedSquadId = DATA.squads[0].id;
     render();
 }
 
 function render() {
     document.getElementById('month-label').textContent = monthLabel();
+    updateSidebarBadge();
     // Context actions per view
     const ctx = document.getElementById('topbar-context-actions');
     const actions = {
         dashboard: '',
         timeentry: '',
-        squads: '<button class="btn btn-primary" onclick="openModal(\'add-squad\')">+ Novo Squad</button><button class="btn" onclick="openModal(\'add-client\')">+ Novo Cliente</button>',
-        financial: '',
-        clients: '<button class="btn btn-primary" onclick="openModal(\'add-client\')">+ Novo Cliente</button>',
+        squads: '<button class="btn btn-primary" onclick="openModal(\'add-client\')">+ Novo Cliente</button>',
+        clients: '<button class="btn btn-primary" onclick="openModal(\'add-client\')">+ Novo Cliente</button><button class="btn" onclick="exportData()">Exportar CSV</button>',
         team: '<button class="btn btn-primary" onclick="openModal(\'add-team\')">+ Novo Colaborador</button>',
         settings: '<button class="btn btn-primary" onclick="openModal(\'add-squad\')">+ Novo Squad</button>'
     };
@@ -592,29 +639,59 @@ function render() {
         case 'dashboard': renderDashboard(); break;
         case 'timeentry': renderTimeEntry(); break;
         case 'squads': renderSquads(); break;
-        case 'financial': renderFinancial(); break;
         case 'clients': renderClients(); break;
         case 'team': renderTeam(); break;
         case 'settings': renderSettings(); break;
     }
 }
 
+function updateSidebarBadge() {
+    const badge = document.getElementById('sidebar-alert-badge');
+    if (!badge) return;
+    const count = getAllAlerts().length;
+    if (count > 0) { badge.style.display = ''; badge.textContent = count; }
+    else { badge.style.display = 'none'; }
+}
+
 // ---------- DASHBOARD ----------
 // ---------- TIME ENTRY ----------
+let timeEntryFilter = { squad: 'all', search: '' };
 function renderTimeEntry() {
-    const mk = monthKey();
+    // Empty state - no clients yet
     const activeClients = DATA.clients.filter(c => c.status !== 'cancelled');
+    if (!activeClients.length) {
+        document.getElementById('timeentry-content').innerHTML = emptyStateHtml({
+            title: 'Nenhum cliente ativo',
+            desc: 'Cadastre clientes antes de lancar horas.',
+            cta: 'Ir para Clientes',
+            action: "showView('clients')"
+        });
+        return;
+    }
 
-    // Build quick entry cards per squad
+    const mk = monthKey();
+    const q = timeEntryFilter.search.toLowerCase().trim();
+
     let html = `
-        <div style="margin-bottom:24px;padding:20px;background:var(--primary-light);border-radius:12px;font-size:14px;color:var(--primary-dark)">
-            <strong>Lancamento rapido</strong> — Preencha as horas realizadas de cada cliente para <strong>${monthLabel()}</strong>. Os valores sao salvos automaticamente ao sair do campo.
+        <div style="margin-bottom:20px;padding:16px 20px;background:var(--primary-light);border-radius:10px;font-size:14px;color:var(--primary-dark)">
+            <strong>Lancamento rapido</strong> &middot; Preencha as horas reais de <strong>${monthLabel()}</strong>. Salva automaticamente ao sair do campo.
+        </div>
+        <div class="filter-bar">
+            <input type="search" placeholder="Buscar cliente..." value="${timeEntryFilter.search}" oninput="timeEntryFilter.search=this.value;renderTimeEntry()">
+            <select onchange="timeEntryFilter.squad=this.value;renderTimeEntry()">
+                <option value="all" ${timeEntryFilter.squad==='all'?'selected':''}>Todos os squads</option>
+                ${DATA.squads.map(sq=>`<option value="${sq.id}" ${timeEntryFilter.squad==String(sq.id)?'selected':''}>${sq.name}</option>`).join('')}
+            </select>
         </div>
     `;
 
-    DATA.squads.forEach(sq => {
-        const cls = squadClients(sq.id);
+    const squadsToShow = timeEntryFilter.squad === 'all' ? DATA.squads : DATA.squads.filter(s => String(s.id) === timeEntryFilter.squad);
+    let anyRendered = false;
+
+    squadsToShow.forEach(sq => {
+        const cls = squadClients(sq.id).filter(c => !q || c.name.toLowerCase().includes(q));
         if (!cls.length) return;
+        anyRendered = true;
         const cap = squadCapacity(sq.id);
         const used = squadTotalHours(sq.id, mk);
         const u = cap > 0 ? used / cap : 0;
@@ -633,7 +710,7 @@ function renderTimeEntry() {
                 </div>
             </div>
             <div class="table-wrapper">
-                <table>
+                <table class="sticky-head">
                     <thead>
                         <tr>
                             <th style="min-width:160px">Cliente</th>
@@ -663,7 +740,7 @@ function renderTimeEntry() {
                                 }).join('') +
                                 '<td class="r"><strong>' + (hasAct ? fmt.hrs(actual) : '-') + '</strong></td>' +
                                 '<td class="r" style="color:var(--text-3)">' + fmt.hrs(planned) + '</td>' +
-                                '<td class="r">' + (hasAct ? devHtml(dev) : '-') + '</td>' +
+                                '<td class="r">' + (hasAct ? devHtml(dev, planned) : '-') + '</td>' +
                                 '</tr>';
                         }).join('')}
                     </tbody>
@@ -671,6 +748,10 @@ function renderTimeEntry() {
             </div>
         </div>`;
     });
+
+    if (!anyRendered) {
+        html += emptyStateHtml({ title: 'Nenhum cliente encontrado', desc: 'Ajuste a busca ou o filtro de squad.' });
+    }
 
     // Log of recent entries
     const entries = [];
@@ -725,7 +806,7 @@ function renderTimeEntryTotals() {
         const totalIdx = ROLES.length + 1;
         cells[totalIdx].innerHTML = '<strong>' + (hasAct ? fmt.hrs(actual) : '-') + '</strong>';
         cells[totalIdx + 1].innerHTML = fmt.hrs(planned);
-        cells[totalIdx + 2].innerHTML = hasAct ? devHtml(dev) : '-';
+        cells[totalIdx + 2].innerHTML = hasAct ? devHtml(dev, planned) : '-';
     });
 }
 
@@ -739,7 +820,38 @@ function focusNextInput(current) {
 }
 
 // ---------- DASHBOARD ----------
+function getOnboardingStep() {
+    if (!DATA.team || DATA.team.length === 0) {
+        return { step: '1 de 4', title: 'Cadastre sua equipe', desc: 'Comece registrando os colaboradores e suas remuneracoes para calcular o custo/hora.', cta: 'Ir para Equipe', view: 'team' };
+    }
+    if (!DATA.squads || DATA.squads.length === 0) {
+        return { step: '2 de 4', title: 'Crie seu primeiro squad', desc: 'Organize a equipe em squads para distribuir clientes entre eles.', cta: 'Ir para Configuracoes', view: 'settings' };
+    }
+    if (!DATA.clients || DATA.clients.length === 0) {
+        return { step: '3 de 4', title: 'Cadastre seu primeiro cliente', desc: 'Adicione os clientes atendidos, o fee mensal e as horas planejadas por funcao.', cta: 'Adicionar Cliente', view: 'clients' };
+    }
+    const mk = monthKey();
+    const anyActuals = DATA.clients.some(c => hasActuals(c, mk));
+    if (!anyActuals) {
+        return { step: '4 de 4', title: `Lance as horas de ${monthLabel()}`, desc: 'Registre quantas horas cada funcao dedicou a cada cliente neste mes.', cta: 'Ir para Registro Diario', view: 'timeentry' };
+    }
+    return null;
+}
+
 function renderDashboard() {
+    // Onboarding step (linear flow guidance)
+    const onb = getOnboardingStep();
+    document.getElementById('onboarding-container').innerHTML = onb ? `
+        <div class="onboarding-card">
+            <div class="onb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+            <div class="onb-body">
+                <div class="onb-step">Proximo passo · ${onb.step}</div>
+                <div class="onb-title">${onb.title}</div>
+                <div class="onb-desc">${onb.desc}</div>
+            </div>
+            <button class="onb-cta" onclick="showView('${onb.view}')">${onb.cta} &rarr;</button>
+        </div>` : '';
+
     const mk = monthKey(), pmk = prevMonthKey();
     const activeClients = DATA.clients.filter(c => c.status !== 'cancelled');
     const totalFee = activeClients.reduce((s,c)=>s+c.fee,0);
@@ -753,42 +865,91 @@ function renderDashboard() {
 
     document.getElementById('dashboard-stats').innerHTML = `
         <div class="stat-card"><div class="label">Receita Total (Fee)</div><div class="value">${fmt.brl(totalFee)}</div><div class="change" style="color:var(--text-3)">${activeClients.length} clientes ativos</div></div>
-        <div class="stat-card"><div class="label">CSP Total</div><div class="value">${fmt.brl(totalCSP)}</div></div>
+        <div class="stat-card"><div class="label">Custo dos Servicos (CSP)</div><div class="value">${fmt.brl(totalCSP)}</div></div>
         <div class="stat-card"><div class="label">Margem Media</div><div class="value" style="color:${marginClass(avgMargin)==='green'?'var(--green)':marginClass(avgMargin)==='yellow'?'var(--yellow)':'var(--red)'}">${fmt.pct(avgMargin)}</div>
             ${Math.abs(marginDelta)>0.001 ? `<div class="change ${marginDelta>0?'positive':'negative'}">${marginDelta>0?'&#9650;':'&#9660;'} ${fmt.pct(Math.abs(marginDelta))} vs ${fmt.monthShort(pmk)}</div>` : ''}
         </div>
         <div class="stat-card"><div class="label">Lucro Bruto</div><div class="value" style="color:var(--green)">${fmt.brl(totalFee-totalCSP)}</div></div>
     `;
 
-    // Alerts
+    // Alerts (collapsed by default when there are 4+)
     const alerts = getAllAlerts();
-    document.getElementById('alerts-container').innerHTML = alerts.length ? `<div class="alerts-list">${alerts.map(a=>`
+    const alertsHtml = alerts.length ? `<div class="alerts-list">${alerts.map(a=>`
         <div class="alert-item ${a.type}">
             <span>${a.type==='danger'?'&#9888;':a.type==='warning'?'&#9888;':'&#8505;'}</span>
             <span>${a.msg}</span>
             <button class="alert-dismiss" onclick="dismissAlert('${a.id}')" title="Fechar">&times;</button>
         </div>`).join('')}</div>` : '';
+    if (alerts.length >= 4) {
+        document.getElementById('alerts-container').innerHTML = `<details class="collapsible" style="margin-bottom:24px"><summary>${alerts.length} alertas ativos</summary><div class="collapsible-body" style="padding:16px 20px">${alertsHtml}</div></details>`;
+    } else {
+        document.getElementById('alerts-container').innerHTML = alertsHtml;
+    }
 
-    // Squads overview
-    document.getElementById('dash-squads').innerHTML = `
-        <div class="table-header"><h3>Capacidade dos Squads - ${monthLabel()}</h3></div>
-        <div class="table-wrapper"><table><thead><tr><th>Squad</th><th class="r">Clientes</th><th class="r">Capacidade</th><th class="r">Horas</th><th style="width:180px">Utilizacao</th><th class="r">Fee</th><th class="r">CSP</th><th class="r">Margem</th></tr></thead><tbody>
-        ${DATA.squads.map(sq=>{
-            const h=squadTotalHours(sq.id,mk), u=squadUtil(sq.id,mk), f=squadFee(sq.id), c=squadCSP(sq.id,mk), m=f>0?(f-c)/f:0;
-            const bc=u>1?'red':u>0.85?'yellow':'green';
-            return `<tr><td><strong>${sq.name}</strong></td><td class="r">${squadClients(sq.id).length}</td><td class="r">${squadCapacity(sq.id)}h</td><td class="r">${fmt.hrs(h)}h</td><td><div class="capacity-bar-container"><div class="capacity-bar"><div class="capacity-bar-fill ${bc}" style="width:${Math.min(u*100,100)}%"></div></div><span class="capacity-label">${fmt.pct(u)}</span></div></td><td class="r">${fmt.brl(f)}</td><td class="r">${fmt.brl(c)}</td><td class="r"><span class="badge-margin ${marginClass(m)}">${fmt.pct(m)}</span></td></tr>`;
-        }).join('')}</tbody></table></div>`;
+    // Squads overview (or empty state)
+    if (!DATA.squads.length) {
+        document.getElementById('dash-squads').innerHTML = emptyStateHtml({
+            title: 'Nenhum squad cadastrado',
+            desc: 'Crie seu primeiro squad para comecar a operar.',
+            cta: '+ Criar Squad',
+            action: "openModal('add-squad')"
+        });
+    } else {
+        document.getElementById('dash-squads').innerHTML = `
+            <div class="table-header"><h3>Capacidade dos Squads</h3></div>
+            <div class="table-wrapper"><table><thead><tr><th>Squad</th><th class="r">Clientes</th><th class="r">Capacidade</th><th class="r">Horas</th><th style="width:180px">Utilizacao</th><th class="r">Fee</th><th class="r">CSP</th><th class="r">Margem</th></tr></thead><tbody>
+            ${DATA.squads.map(sq=>{
+                const h=squadTotalHours(sq.id,mk), u=squadUtil(sq.id,mk), f=squadFee(sq.id), c=squadCSP(sq.id,mk), m=f>0?(f-c)/f:0;
+                const bc=u>1?'red':u>0.85?'yellow':'green';
+                return `<tr style="cursor:pointer" onclick="selectedSquadId=${sq.id};showView('squads')"><td><strong>${sq.name}</strong></td><td class="r">${squadClients(sq.id).length}</td><td class="r">${squadCapacity(sq.id)}h</td><td class="r">${fmt.hrs(h)}h</td><td><div class="capacity-bar-container"><div class="capacity-bar"><div class="capacity-bar-fill ${bc}" style="width:${Math.min(u*100,100)}%"></div></div><span class="capacity-label">${fmt.pct(u)}</span></div></td><td class="r">${fmt.brl(f)}</td><td class="r">${fmt.brl(c)}</td><td class="r"><span class="badge-margin ${marginClass(m)}">${fmt.pct(m)}</span></td></tr>`;
+            }).join('')}</tbody></table></div>`;
+    }
 
-    // Top/Low margin
+    // Top/Low margins combined in a single collapsible block
     const sorted = [...activeClients].filter(c=>c.fee>0).sort((a,b)=>clientMargin(b,mk)-clientMargin(a,mk));
-    const renderMiniTable = (title,list) => `<div class="table-header"><h3>${title}</h3></div><div class="table-wrapper"><table><thead><tr><th>Cliente</th><th class="r">Fee</th><th class="r">CSP</th><th class="r">Margem</th></tr></thead><tbody>${list.map(c=>{const m=clientMargin(c,mk);return `<tr><td>${c.name}</td><td class="r">${fmt.brl(c.fee)}</td><td class="r">${fmt.brl(clientCSP(c,mk))}</td><td class="r"><span class="badge-margin ${marginClass(m)}">${fmt.pct(m)}</span></td></tr>`;}).join('')}</tbody></table></div>`;
-    document.getElementById('dash-top').innerHTML = renderMiniTable('Melhores Margens', sorted.slice(0,5));
-    document.getElementById('dash-low').innerHTML = renderMiniTable('Piores Margens', sorted.slice(-5).reverse());
-
+    const rowHtml = list => list.map(c=>{const m=clientMargin(c,mk);return `<tr><td>${c.name}</td><td class="r">${fmt.brl(c.fee)}</td><td class="r">${fmt.brl(clientCSP(c,mk))}</td><td class="r"><span class="badge-margin ${marginClass(m)}">${fmt.pct(m)}</span></td></tr>`;}).join('');
+    if (sorted.length >= 2) {
+        document.getElementById('dash-margins').innerHTML = `
+            <details class="collapsible">
+                <summary>Ranking de Margens (${sorted.length} clientes)</summary>
+                <div class="collapsible-body" style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+                    <div style="border-right:1px solid var(--border)">
+                        <div style="padding:12px 20px;font-size:12px;font-weight:700;color:var(--green-text);text-transform:uppercase;letter-spacing:0.5px;background:var(--green-bg)">Melhores Margens</div>
+                        <div class="table-wrapper"><table><thead><tr><th>Cliente</th><th class="r">Fee</th><th class="r">CSP</th><th class="r">Margem</th></tr></thead><tbody>${rowHtml(sorted.slice(0,5))}</tbody></table></div>
+                    </div>
+                    <div>
+                        <div style="padding:12px 20px;font-size:12px;font-weight:700;color:var(--red-text);text-transform:uppercase;letter-spacing:0.5px;background:var(--red-bg)">Piores Margens</div>
+                        <div class="table-wrapper"><table><thead><tr><th>Cliente</th><th class="r">Fee</th><th class="r">CSP</th><th class="r">Margem</th></tr></thead><tbody>${rowHtml(sorted.slice(-5).reverse())}</tbody></table></div>
+                    </div>
+                </div>
+            </details>`;
+    } else {
+        document.getElementById('dash-margins').innerHTML = '';
+    }
 }
 
-// ---------- SQUADS ----------
+function emptyStateHtml(opts) {
+    return `<div class="empty-state">
+        <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+        <div class="empty-title">${opts.title}</div>
+        <div class="empty-desc">${opts.desc}</div>
+        ${opts.cta ? `<button class="btn btn-primary" onclick="${opts.action}">${opts.cta}</button>` : ''}
+    </div>`;
+}
+
+// ---------- SQUADS (UNIFIED: OPERATION + FINANCIAL) ----------
 function renderSquads() {
+    // Empty state if no squads
+    if (!DATA.squads.length) {
+        document.getElementById('squad-tabs').innerHTML = '';
+        document.getElementById('squad-detail').innerHTML = emptyStateHtml({
+            title: 'Nenhum squad cadastrado',
+            desc: 'Crie seu primeiro squad em Configuracoes para organizar sua equipe.',
+            cta: 'Ir para Configuracoes',
+            action: "showView('settings')"
+        });
+        return;
+    }
     renderTabs('squad-tabs');
     const sq = DATA.squads.find(s=>s.id===selectedSquadId);
     if (!sq) { document.getElementById('squad-detail').innerHTML=''; return; }
@@ -797,8 +958,27 @@ function renderSquads() {
     const totalH = squadTotalHours(sq.id,mk), u = squadUtil(sq.id,mk);
     const bc = u>1?'red':u>0.85?'yellow':'green';
     const anyActuals = cls.some(c=>hasActuals(c,mk));
+    const totalFee = squadFee(sq.id), totalCSP_val = squadCSP(sq.id,mk);
+    const avgM = totalFee>0 ? (totalFee-totalCSP_val)/totalFee : 0;
+
+    // Empty state if squad has no clients
+    if (!cls.length) {
+        document.getElementById('squad-detail').innerHTML = `
+            <div class="info-bar">
+                <div class="info-item"><div class="label">Capacidade Total</div><div class="value">${squadCapacity(sq.id)}h</div></div>
+                <div class="info-item"><div class="label">Membros</div><div class="value">${sq.members.filter(m=>m.name&&m.name.trim()).length}</div></div>
+            </div>
+            ${emptyStateHtml({
+                title: 'Este squad nao tem clientes',
+                desc: 'Adicione clientes para comecar a monitorar horas e fees.',
+                cta: '+ Adicionar Cliente',
+                action: "openModal('add-client')"
+            })}`;
+        return;
+    }
 
     let html = `
+        <!-- OPERATIONAL SECTION -->
         <div class="info-bar">
             <div class="info-item"><div class="label">Capacidade Total</div><div class="value">${squadCapacity(sq.id)}h</div></div>
             <div class="info-item"><div class="label">Horas/Pessoa</div><div class="value">${sq.capacity}h</div></div>
@@ -808,7 +988,6 @@ function renderSquads() {
         </div>
         <div class="members-grid">${sq.members.map(m=>`<div class="member-chip"><div class="role">${m.role}</div><div class="name">${m.name}</div><div class="cost">${fmt.brl(m.costPerHour)}/h</div></div>`).join('')}</div>
 
-        <!-- PLANNED HOURS TABLE -->
         <div class="table-container">
             <div class="table-header"><h3>Horas Planejadas</h3><span style="font-size:12px;color:var(--text-2)">Edite em Clientes</span></div>
             <div class="table-wrapper"><table><thead><tr><th>Cliente</th>${ROLES.map(r=>`<th class="r">${r}</th>`).join('')}<th class="r">Total</th><th class="r">% do Squad</th></tr></thead><tbody>
@@ -817,21 +996,20 @@ function renderSquads() {
             </tbody></table></div>
         </div>
 
-        <!-- ACTUAL HOURS TABLE -->
         <div class="table-container">
-            <div class="table-header"><h3>Horas Realizadas - ${monthLabel()}</h3><span style="font-size:12px;color:var(--text-2)">Edite em Registro Diario</span></div>
+            <div class="table-header"><h3>Horas Realizadas &middot; ${monthLabel()}</h3><span style="font-size:12px;color:var(--text-2)">Edite em Registro Diario</span></div>
             <div class="table-wrapper"><table><thead><tr><th>Cliente</th>${ROLES.map(r=>`<th class="r">${r}</th>`).join('')}<th class="r">Total</th><th class="r">% do Squad</th><th class="r">Desvio</th></tr></thead><tbody>
             ${cls.map(c=>{
                 const dev = totalDeviation(c);
+                const planned = clientTotalPlanned(c);
                 const actH = hasActuals(c,mk) ? clientTotalActual(c,mk) : 0;
                 const sqCap2=squadCapacity(sq.id); const actPct = sqCap2>0 ? actH/sqCap2 : 0;
-                return `<tr><td><strong>${c.name}</strong></td>${ROLES.map(r=>`<td class="r">${hasActuals(c,mk)?fmt.num(getActual(c,r,mk)):'-'}</td>`).join('')}<td class="r">${hasActuals(c,mk)?fmt.hrs(actH):'-'}</td><td class="r">${hasActuals(c,mk)?`<span class="badge-margin ${actPct>0.3?'red':actPct>0.15?'yellow':'green'}">${fmt.pct(actPct)}</span>`:'-'}</td><td class="r">${hasActuals(c,mk)?devHtml(dev):'-'}</td></tr>`;
+                return `<tr><td><strong>${c.name}</strong></td>${ROLES.map(r=>`<td class="r">${hasActuals(c,mk)?fmt.num(getActual(c,r,mk)):'-'}</td>`).join('')}<td class="r">${hasActuals(c,mk)?fmt.hrs(actH):'-'}</td><td class="r">${hasActuals(c,mk)?`<span class="badge-margin ${actPct>0.3?'red':actPct>0.15?'yellow':'green'}">${fmt.pct(actPct)}</span>`:'-'}</td><td class="r">${hasActuals(c,mk)?devHtml(dev,planned):'-'}</td></tr>`;
             }).join('')}
-            ${anyActuals ? (()=>{const totalAct=cls.filter(c=>hasActuals(c,mk)).reduce((s,c)=>s+clientTotalActual(c,mk),0); const sqCapAct=squadCapacity(sq.id); const totalActPct=sqCapAct>0?totalAct/sqCapAct:0; return `<tr class="total-row"><td>TOTAL</td>${ROLES.map(r=>{const act=cls.filter(c=>hasActuals(c,mk)).reduce((s,c)=>s+getActual(c,r,mk),0); return `<td class="r">${fmt.hrs(act)}</td>`;}).join('')}<td class="r">${fmt.hrs(totalAct)}</td><td class="r">${fmt.pct(totalActPct)}</td><td class="r">${devHtml(cls.filter(c=>hasActuals(c,mk)).reduce((s,c)=>s+totalDeviation(c),0))}</td></tr>`;})() : ''}
+            ${anyActuals ? (()=>{const totalAct=cls.filter(c=>hasActuals(c,mk)).reduce((s,c)=>s+clientTotalActual(c,mk),0); const sqCapAct=squadCapacity(sq.id); const totalActPct=sqCapAct>0?totalAct/sqCapAct:0; const totalPlannedDev=cls.filter(c=>hasActuals(c,mk)).reduce((s,c)=>s+clientTotalPlanned(c),0); return `<tr class="total-row"><td>TOTAL</td>${ROLES.map(r=>{const act=cls.filter(c=>hasActuals(c,mk)).reduce((s,c)=>s+getActual(c,r,mk),0); return `<td class="r">${fmt.hrs(act)}</td>`;}).join('')}<td class="r">${fmt.hrs(totalAct)}</td><td class="r">${fmt.pct(totalActPct)}</td><td class="r">${devHtml(cls.filter(c=>hasActuals(c,mk)).reduce((s,c)=>s+totalDeviation(c),0),totalPlannedDev)}</td></tr>`;})() : ''}
             </tbody></table></div>
         </div>
 
-        <!-- CAPACITY PER ROLE -->
         <div class="table-container">
             <div class="table-header"><h3>Capacidade por Funcao</h3></div>
             <div class="table-wrapper"><table><thead><tr><th>Metrica</th>${ROLES.map(r=>`<th class="r">${r}</th>`).join('')}<th class="r">Total</th></tr></thead><tbody>
@@ -839,6 +1017,45 @@ function renderSquads() {
             <tr class="pct-row"><td>% Livre</td>${ROLES.map(r=>{const used=squadTotalByRole(sq.id,r,mk); const sqCapR=squadCapacity(sq.id); const free=sqCapR>0?1-(used/sqCapR):1; return `<td class="r">${fmt.pct(Math.max(0,free))}</td>`;}).join('')}<td class="r">${fmt.pct(Math.max(0,1-u))}</td></tr>
             </tbody></table></div>
         </div>
+
+        <!-- FINANCIAL SECTION -->
+        <div class="section-divider"><span class="section-title">Financeiro</span></div>
+
+        <div class="info-bar">
+            <div class="info-item"><div class="label">Fee Total</div><div class="value">${fmt.brl(totalFee)}</div></div>
+            <div class="info-item"><div class="label">CSP Total</div><div class="value">${fmt.brl(totalCSP_val)}</div></div>
+            <div class="info-item"><div class="label">Lucro Bruto</div><div class="value" style="color:var(--green)">${fmt.brl(totalFee-totalCSP_val)}</div></div>
+            <div class="info-item"><div class="label">Margem Media</div><div class="value" style="color:${marginClass(avgM)==='green'?'var(--green)':marginClass(avgM)==='yellow'?'var(--yellow)':'var(--red)'}">${fmt.pct(avgM)}</div></div>
+        </div>
+
+        <div class="table-container">
+            <div class="table-header"><h3>CSP por Area</h3></div>
+            <div class="table-wrapper"><table><thead><tr><th>Area</th><th class="r">Horas Totais</th><th class="r">Custo/Hora</th><th class="r">CSP Total</th><th class="r">% do CSP</th></tr></thead><tbody>
+            ${ROLES.map(r=>{
+                const hrs=squadTotalByRole(sq.id,r,mk);
+                const cost=getCost(sq.id,r);
+                const cspRole=cls.reduce((s,c)=>s+clientCSPByRole(c,r,mk),0);
+                const pct=totalCSP_val>0?cspRole/totalCSP_val:0;
+                return `<tr><td><strong>${r}</strong></td><td class="r">${fmt.hrs(hrs)}h</td><td class="r">${fmt.brl(cost)}</td><td class="r">${fmt.brl(cspRole)}</td><td class="r">${fmt.pct(pct)}</td></tr>`;
+            }).join('')}
+            <tr class="total-row"><td>TOTAL</td><td class="r">${fmt.hrs(squadTotalHours(sq.id,mk))}h</td><td class="r">-</td><td class="r">${fmt.brl(totalCSP_val)}</td><td class="r">100%</td></tr>
+            </tbody></table></div>
+        </div>
+
+        ${buildPricingTable(cls, mk)}
+
+        <details class="collapsible">
+            <summary>Detalhamento CSP por cliente e funcao</summary>
+            <div class="collapsible-body table-wrapper"><table><thead><tr><th>Cliente</th><th class="r">Fee</th><th class="r">Horas</th><th class="r">CSP Total</th><th class="r">Custo/Hora</th><th class="r">Margem</th>${ROLES.map(r=>`<th class="r">CSP ${r}</th>`).join('')}</tr></thead><tbody>
+            ${cls.map(c=>{
+                const csp=clientCSP(c,mk), m=clientMargin(c,mk), hrs=clientTotalHours(c,mk);
+                const cph=hrs>0?csp/hrs:0;
+                return `<tr><td><strong>${c.name}</strong></td><td class="r editable wide" onclick="startEditFee(this,${c.id})">${fmt.brl(c.fee)}</td><td class="r">${fmt.hrs(hrs)}h</td><td class="r">${fmt.brl(csp)}</td><td class="r">${fmt.brl(cph)}</td><td class="r"><span class="badge-margin ${marginClass(m)}">${fmt.pct(m)}</span></td>${ROLES.map(r=>`<td class="r">${fmt.brl(clientCSPByRole(c,r,mk))}</td>`).join('')}</tr>`;
+            }).join('')}
+            ${(()=>{const totalHrs=squadTotalHours(sq.id,mk); const avgCph=totalHrs>0?totalCSP_val/totalHrs:0; return `
+            <tr class="total-row"><td>TOTAL</td><td class="r">${fmt.brl(totalFee)}</td><td class="r">${fmt.hrs(totalHrs)}h</td><td class="r">${fmt.brl(totalCSP_val)}</td><td class="r">${fmt.brl(avgCph)}</td><td class="r"><span class="badge-margin ${marginClass(avgM)}">${fmt.pct(avgM)}</span></td>${ROLES.map(r=>`<td class="r">${fmt.brl(cls.reduce((s,c)=>s+clientCSPByRole(c,r,mk),0))}</td>`).join('')}</tr>`;})()}
+            </tbody></table></div>
+        </details>
     `;
     document.getElementById('squad-detail').innerHTML = html;
 }
@@ -884,66 +1101,41 @@ function buildPricingTable(cls, mk) {
         rows + '</tbody></table></div></div>';
 }
 
-// ---------- FINANCIAL ----------
-function renderFinancial() {
-    renderTabs('fin-tabs');
-    const sq = DATA.squads.find(s=>s.id===selectedSquadId);
-    if (!sq) { document.getElementById('fin-detail').innerHTML=''; return; }
-
-    const cls = squadClients(sq.id), mk = monthKey();
-    const totalFee = squadFee(sq.id), totalCSP_val = squadCSP(sq.id,mk);
-    const avgM = totalFee>0 ? (totalFee-totalCSP_val)/totalFee : 0;
-
-    let html = `
-        <div class="info-bar">
-            <div class="info-item"><div class="label">Fee Total</div><div class="value">${fmt.brl(totalFee)}</div></div>
-            <div class="info-item"><div class="label">CSP Total</div><div class="value">${fmt.brl(totalCSP_val)}</div></div>
-            <div class="info-item"><div class="label">Lucro Bruto</div><div class="value" style="color:var(--green)">${fmt.brl(totalFee-totalCSP_val)}</div></div>
-            <div class="info-item"><div class="label">Margem Media</div><div class="value" style="color:${marginClass(avgM)==='green'?'var(--green)':marginClass(avgM)==='yellow'?'var(--yellow)':'var(--red)'}">${fmt.pct(avgM)}</div></div>
-        </div>
-
-        <!-- CSP por Area -->
-        <div class="table-container">
-            <div class="table-header"><h3>CSP por Area - ${monthLabel()}</h3></div>
-            <div class="table-wrapper"><table><thead><tr><th>Area</th><th class="r">Horas Totais</th><th class="r">Custo/Hora</th><th class="r">CSP Total</th><th class="r">% do CSP</th></tr></thead><tbody>
-            ${ROLES.map(r=>{
-                const hrs=squadTotalByRole(sq.id,r,mk);
-                const cost=getCost(sq.id,r);
-                const cspRole=cls.reduce((s,c)=>s+clientCSPByRole(c,r,mk),0);
-                const pct=totalCSP_val>0?cspRole/totalCSP_val:0;
-                return `<tr><td><strong>${r}</strong></td><td class="r">${fmt.hrs(hrs)}h</td><td class="r">${fmt.brl(cost)}</td><td class="r">${fmt.brl(cspRole)}</td><td class="r">${fmt.pct(pct)}</td></tr>`;
-            }).join('')}
-            <tr class="total-row"><td>TOTAL</td><td class="r">${fmt.hrs(squadTotalHours(sq.id,mk))}h</td><td class="r">-</td><td class="r">${fmt.brl(totalCSP_val)}</td><td class="r">100%</td></tr>
-            </tbody></table></div>
-        </div>
-
-        ${buildPricingTable(cls, mk, totalCSP_val)}
-
-        <!-- Detalhamento por Cliente -->
-        <div class="table-container">
-            <div class="table-header"><h3>Detalhamento CSP por Funcao - ${monthLabel()}</h3></div>
-            <div class="table-wrapper"><table><thead><tr><th>Cliente</th><th class="r">Fee</th><th class="r">Horas</th><th class="r">CSP Total</th><th class="r">Custo/Hora</th><th class="r">Margem</th>${ROLES.map(r=>`<th class="r">CSP ${r}</th>`).join('')}</tr></thead><tbody>
-            ${cls.map(c=>{
-                const csp=clientCSP(c,mk), m=clientMargin(c,mk), hrs=clientTotalHours(c,mk);
-                const cph=hrs>0?csp/hrs:0;
-                return `<tr><td><strong>${c.name}</strong></td><td class="r editable wide" onclick="startEditFee(this,${c.id})">${fmt.brl(c.fee)}</td><td class="r">${fmt.hrs(hrs)}h</td><td class="r">${fmt.brl(csp)}</td><td class="r">${fmt.brl(cph)}</td><td class="r"><span class="badge-margin ${marginClass(m)}">${fmt.pct(m)}</span></td>${ROLES.map(r=>`<td class="r">${fmt.brl(clientCSPByRole(c,r,mk))}</td>`).join('')}</tr>`;
-            }).join('')}
-            ${(()=>{const totalHrs=squadTotalHours(sq.id,mk); const avgCph=totalHrs>0?totalCSP_val/totalHrs:0; return `
-            <tr class="total-row"><td>TOTAL</td><td class="r">${fmt.brl(totalFee)}</td><td class="r">${fmt.hrs(totalHrs)}h</td><td class="r">${fmt.brl(totalCSP_val)}</td><td class="r">${fmt.brl(avgCph)}</td><td class="r"><span class="badge-margin ${marginClass(avgM)}">${fmt.pct(avgM)}</span></td>${ROLES.map(r=>`<td class="r">${fmt.brl(cls.reduce((s,c)=>s+clientCSPByRole(c,r,mk),0))}</td>`).join('')}</tr>`;})()}
-            </tbody></table></div>
-        </div>
-    `;
-    document.getElementById('fin-detail').innerHTML = html;
-}
 
 // ---------- CLIENTS ----------
+let clientsFilter = { search: '', status: 'all' };
 function renderClients() {
+    // Empty state
+    if (!DATA.clients.length) {
+        document.getElementById('clients-list').innerHTML = emptyStateHtml({
+            title: 'Nenhum cliente cadastrado',
+            desc: 'Adicione seus clientes para monitorar horas e fees.',
+            cta: '+ Adicionar Cliente',
+            action: "openModal('add-client')"
+        });
+        return;
+    }
     const mk = monthKey();
+    const q = clientsFilter.search.toLowerCase().trim();
+    const filtered = DATA.clients.filter(c => {
+        if (clientsFilter.status !== 'all' && c.status !== clientsFilter.status) return false;
+        if (q && !c.name.toLowerCase().includes(q)) return false;
+        return true;
+    });
     document.getElementById('clients-list').innerHTML = `
+        <div class="filter-bar">
+            <input type="search" placeholder="Buscar cliente..." value="${clientsFilter.search}" oninput="clientsFilter.search=this.value;renderClients()">
+            <select onchange="clientsFilter.status=this.value;renderClients()">
+                <option value="all" ${clientsFilter.status==='all'?'selected':''}>Todos os status</option>
+                <option value="active" ${clientsFilter.status==='active'?'selected':''}>Ativos</option>
+                <option value="cancelled" ${clientsFilter.status==='cancelled'?'selected':''}>Cancelados</option>
+            </select>
+            <span style="font-size:13px;color:var(--text-2)">${filtered.length} de ${DATA.clients.length} clientes</span>
+        </div>
         <div class="table-container">
-            <div class="table-header"><h3>Todos os Clientes</h3></div>
-            <div class="table-wrapper"><table><thead><tr><th>Cliente</th><th>Squad</th><th class="r">Fee</th><th class="r">Horas Plan.</th><th class="r">Horas Real.</th><th class="r">Desvio</th><th class="r">CSP</th><th class="r">Margem</th><th>Status</th><th class="c">Acoes</th></tr></thead><tbody>
-            ${DATA.clients.map(c=>{
+            <div class="table-header"><h3>Clientes</h3><span style="font-size:12px;color:var(--text-2)">Fee clicavel para editar rapido</span></div>
+            ${filtered.length ? `<div class="table-wrapper"><table><thead><tr><th>Cliente</th><th>Squad</th><th class="r">Fee Mensal</th><th class="r">Horas Planejadas</th><th class="r">Horas Realizadas</th><th class="r">Desvio</th><th class="r">Custo (CSP)</th><th class="r">Margem</th><th>Status</th><th class="c">Acoes</th></tr></thead><tbody>
+            ${filtered.map(c=>{
                 const sq=DATA.squads.find(s=>s.id===c.squadId);
                 const csp=clientCSP(c,mk), m=clientMargin(c,mk);
                 const planned=clientTotalPlanned(c), actual=hasActuals(c,mk)?clientTotalActual(c,mk):null;
@@ -951,23 +1143,32 @@ function renderClients() {
                 return `<tr>
                     <td><strong>${c.name}</strong></td>
                     <td>${sq?.name||'-'}</td>
-                    <td class="r">${fmt.brl(c.fee)}</td>
+                    <td class="r editable wide" onclick="startEditFee(this,${c.id})">${fmt.brl(c.fee)}</td>
                     <td class="r">${fmt.hrs(planned)}h</td>
-                    <td class="r">${actual!==null?fmt.hrs(actual)+'h':'-'}</td>
-                    <td class="r">${dev!==null?devHtml(dev):'-'}</td>
+                    <td class="r">${actual!==null?fmt.hrs(actual)+'h':'<span style=color:var(--text-3)>nao lancado</span>'}</td>
+                    <td class="r">${dev!==null?devHtml(dev,planned):'-'}</td>
                     <td class="r">${fmt.brl(csp)}</td>
                     <td class="r"><span class="badge-margin ${marginClass(m)}">${fmt.pct(m)}</span></td>
                     <td><span class="badge-status ${c.status}">${STATUS_LABELS[c.status]||c.status}</span></td>
                     <td class="c"><button class="btn btn-sm" onclick="openModal('edit-client',${c.id})">Editar</button> <button class="btn btn-sm btn-danger" onclick="deleteClient(${c.id})">Excluir</button></td>
                 </tr>`;
             }).join('')}
-            </tbody></table></div>
+            </tbody></table></div>` : emptyStateHtml({ title:'Nenhum resultado', desc:'Ajuste o filtro ou limpe a busca.' })}
         </div>
     `;
 }
 
 // ---------- TEAM ----------
 function renderTeam() {
+    if (!DATA.team || !DATA.team.length) {
+        document.getElementById('team-content').innerHTML = emptyStateHtml({
+            title: 'Nenhum colaborador cadastrado',
+            desc: 'Cadastre a equipe e suas remuneracoes para calcular o custo/hora automaticamente.',
+            cta: '+ Adicionar Colaborador',
+            action: "openModal('add-team')"
+        });
+        return;
+    }
     const totalSalary = getTeamTotalSalary();
     const totalMembers = DATA.team.length;
 
