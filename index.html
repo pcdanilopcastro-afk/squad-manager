@@ -565,6 +565,14 @@ function squadCapacity(sqId) {
 function squadUtil(sqId, month) { const cap = squadCapacity(sqId); return cap > 0 ? squadTotalHours(sqId,month)/cap : 0; }
 function squadFee(sqId) { return squadClients(sqId).reduce((s,c) => s + c.fee, 0); }
 function squadCSP(sqId, month) { return squadClients(sqId).reduce((s,c) => s + clientCSP(c,month), 0); }
+function squadTotalSalary(sqId) {
+    const sq = DATA.squads.find(s => s.id === sqId);
+    if (!sq) return 0;
+    return sq.members.filter(m => m.name && m.name.trim()).reduce((s, m) => {
+        const tm = getTeamMember(m.name);
+        return s + (tm ? (tm.salary || 0) : 0);
+    }, 0);
+}
 
 
 function getAllAlerts() {
@@ -967,6 +975,7 @@ function renderSquads() {
             <div class="info-bar">
                 <div class="info-item"><div class="label">Capacidade Total</div><div class="value">${squadCapacity(sq.id)}h</div></div>
                 <div class="info-item"><div class="label">Membros</div><div class="value">${sq.members.filter(m=>m.name&&m.name.trim()).length}</div></div>
+                <div class="info-item"><div class="label">Custo do Squad</div><div class="value">${fmt.brl(squadTotalSalary(sq.id))}</div></div>
             </div>
             ${emptyStateHtml({
                 title: 'Este squad nao tem clientes',
@@ -1022,8 +1031,10 @@ function renderSquads() {
         <div class="section-divider"><span class="section-title">Financeiro</span></div>
 
         <div class="info-bar">
+            <div class="info-item"><div class="label">Custo do Squad</div><div class="value">${fmt.brl(squadTotalSalary(sq.id))}</div></div>
             <div class="info-item"><div class="label">Fee Total</div><div class="value">${fmt.brl(totalFee)}</div></div>
             <div class="info-item"><div class="label">CSP Total</div><div class="value">${fmt.brl(totalCSP_val)}</div></div>
+            <div class="info-item"><div class="label">CSP / Fee</div><div class="value"><span class="badge-margin ${marginClass(avgM)}">${totalFee>0?fmt.pct(totalCSP_val/totalFee):'-'}</span></div></div>
             <div class="info-item"><div class="label">Lucro Bruto</div><div class="value" style="color:var(--green)">${fmt.brl(totalFee-totalCSP_val)}</div></div>
             <div class="info-item"><div class="label">Margem Media</div><div class="value" style="color:${marginClass(avgM)==='green'?'var(--green)':marginClass(avgM)==='yellow'?'var(--yellow)':'var(--red)'}">${fmt.pct(avgM)}</div></div>
         </div>
