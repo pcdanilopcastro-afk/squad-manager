@@ -554,15 +554,30 @@ function totalDeviation(client) {
 }
 
 function squadClients(sqId) { return DATA.clients.filter(c => c.squadId === sqId && c.status !== 'cancelled'); }
+// Hours used for CSP calculation (hybrid: actual if exists, else planned)
 function squadTotalByRole(sqId, role, month) { return squadClients(sqId).reduce((s,c) => s + getHours(c,role,month), 0); }
 function squadTotalHours(sqId, month) { return squadClients(sqId).reduce((s,c) => s + clientTotalHours(c,month), 0); }
+// Planned hours: contractual commitment (used for capacity utilization)
+function squadPlannedByRole(sqId, role) { return squadClients(sqId).reduce((s,c) => s + getPlanned(c,role), 0); }
+function squadPlannedTotal(sqId) { return squadClients(sqId).reduce((s,c) => s + clientTotalPlanned(c), 0); }
+// Actual hours: only counts clients that reported actuals
+function squadActualByRole(sqId, role, month) { return squadClients(sqId).reduce((s,c) => s + (hasActuals(c,month) ? getActual(c,role,month) : 0), 0); }
+function squadActualTotal(sqId, month) { return squadClients(sqId).reduce((s,c) => s + (hasActuals(c,month) ? clientTotalActual(c,month) : 0), 0); }
+function squadHasAnyActuals(sqId, month) { return squadClients(sqId).some(c => hasActuals(c,month)); }
 function squadCapacity(sqId) {
     const sq = DATA.squads.find(s=>s.id===sqId);
     if (!sq) return 0;
     const activeMembers = sq.members.filter(m => m.name && m.name.trim() !== '').length;
     return activeMembers * (sq.capacity || HOURS_BASE); // capacity = horas por pessoa (default 180)
 }
-function squadUtil(sqId, month) { const cap = squadCapacity(sqId); return cap > 0 ? squadTotalHours(sqId,month)/cap : 0; }
+function squadRoleCapacity(sqId, role) {
+    const sq = DATA.squads.find(s=>s.id===sqId);
+    if (!sq) return 0;
+    const count = sq.members.filter(m => m.role === role && m.name && m.name.trim()).length;
+    return count * (sq.capacity || HOURS_BASE);
+}
+// Utilization based on planned (commitment vs capacity)
+function squadUtil(sqId) { const cap = squadCapacity(sqId); return cap > 0 ? squadPlannedTotal(sqId)/cap : 0; }
 function squadFee(sqId) { return squadClients(sqId).reduce((s,c) => s + c.fee, 0); }
 function squadCSP(sqId, month) { return squadClients(sqId).reduce((s,c) => s + clientCSP(c,month), 0); }
 function squadTotalSalary(sqId) {
@@ -701,8 +716,8 @@ function renderTimeEntry() {
         if (!cls.length) return;
         anyRendered = true;
         const cap = squadCapacity(sq.id);
-        const used = squadTotalHours(sq.id, mk);
-        const u = cap > 0 ? used / cap : 0;
+        const planned = squadPlannedTotal(sq.id);
+        const u = cap > 0 ? planned / cap : 0;
         const bc = u > 1 ? 'red' : u > 0.85 ? 'yellow' : 'green';
 
         html += `
@@ -710,7 +725,7 @@ function renderTimeEntry() {
             <div class="table-header">
                 <h3>${sq.name}</h3>
                 <div style="display:flex;align-items:center;gap:16px">
-                    <span style="font-size:13px;color:var(--text-2)">${fmt.hrs(used)}h / ${cap}h usadas</span>
+                    <span style="font-size:13px;color:var(--text-2)">${fmt.hrs(planned)}h / ${cap}h planejadas</span>
                     <div class="capacity-bar-container" style="width:120px">
                         <div class="capacity-bar"><div class="capacity-bar-fill ${bc}" style="width:${Math.min(u*100,100)}%"></div></div>
                         <span class="capacity-label">${fmt.pct(u)}</span>
@@ -905,11 +920,11 @@ function renderDashboard() {
     } else {
         document.getElementById('dash-squads').innerHTML = `
             <div class="table-header"><h3>Capacidade dos Squads</h3></div>
-            <div class="table-wrapper"><table><thead><tr><th>Squad</th><th class="r">Clientes</th><th class="r">Capacidade</th><th class="r">Horas</th><th style="width:180px">Utilizacao</th><th class="r">Fee</th><th class="r">CSP</th><th class="r">Margem</th></tr></thead><tbody>
+            <div class="table-wrapper"><table><thead><tr><th>Squad</th><th class="r">Clientes</th><th class="r">Capacidade</th><th class="r">Planejadas</th><th class="r">Realizadas</th><th style="width:180px">Utilizacao</th><th class="r">Fee</th><th class="r">CSP</th><th class="r">Margem</th></tr></thead><tbody>
             ${DATA.squads.map(sq=>{
-                const h=squadTotalHours(sq.id,mk), u=squadUtil(sq.id,mk), f=squadFee(sq.id), c=squadCSP(sq.id,mk), m=f>0?(f-c)/f:0;
+                const planned=squadPlannedTotal(sq.id), actual=squadActualTotal(sq.id,mk), hasAct=squadHasAnyActuals(sq.id,mk), u=squadUtil(sq.id), f=squadFee(sq.id), c=squadCSP(sq.id,mk), m=f>0?(f-c)/f:0;
                 const bc=u>1?'red':u>0.85?'yellow':'green';
-                return `<tr style="cursor:pointer" onclick="selectedSquadId=${sq.id};showView('squads')"><td><strong>${sq.name}</strong></td><td class="r">${squadClients(sq.id).length}</td><td class="r">${squadCapacity(sq.id)}h</td><td class="r">${fmt.hrs(h)}h</td><td><div class="capacity-bar-container"><div class="capacity-bar"><div class="capacity-bar-fill ${bc}" style="width:${Math.min(u*100,100)}%"></div></div><span class="capacity-label">${fmt.pct(u)}</span></div></td><td class="r">${fmt.brl(f)}</td><td class="r">${fmt.brl(c)}</td><td class="r"><span class="badge-margin ${marginClass(m)}">${fmt.pct(m)}</span></td></tr>`;
+                return `<tr style="cursor:pointer" onclick="selectedSquadId=${sq.id};showView('squads')"><td><strong>${sq.name}</strong></td><td class="r">${squadClients(sq.id).length}</td><td class="r">${squadCapacity(sq.id)}h</td><td class="r">${fmt.hrs(planned)}h</td><td class="r">${hasAct?fmt.hrs(actual)+'h':'-'}</td><td><div class="capacity-bar-container"><div class="capacity-bar"><div class="capacity-bar-fill ${bc}" style="width:${Math.min(u*100,100)}%"></div></div><span class="capacity-label">${fmt.pct(u)}</span></div></td><td class="r">${fmt.brl(f)}</td><td class="r">${fmt.brl(c)}</td><td class="r"><span class="badge-margin ${marginClass(m)}">${fmt.pct(m)}</span></td></tr>`;
             }).join('')}</tbody></table></div>`;
     }
 
@@ -963,9 +978,11 @@ function renderSquads() {
     if (!sq) { document.getElementById('squad-detail').innerHTML=''; return; }
 
     const cls = squadClients(sq.id), mk = monthKey();
-    const totalH = squadTotalHours(sq.id,mk), u = squadUtil(sq.id,mk);
+    const totalPlanned = squadPlannedTotal(sq.id);
+    const totalActual = squadActualTotal(sq.id, mk);
+    const u = squadUtil(sq.id);
     const bc = u>1?'red':u>0.85?'yellow':'green';
-    const anyActuals = cls.some(c=>hasActuals(c,mk));
+    const anyActuals = squadHasAnyActuals(sq.id, mk);
     const totalFee = squadFee(sq.id), totalCSP_val = squadCSP(sq.id,mk);
     const avgM = totalFee>0 ? (totalFee-totalCSP_val)/totalFee : 0;
 
@@ -991,9 +1008,10 @@ function renderSquads() {
         <div class="info-bar">
             <div class="info-item"><div class="label">Capacidade Total</div><div class="value">${squadCapacity(sq.id)}h</div></div>
             <div class="info-item"><div class="label">Horas/Pessoa</div><div class="value">${sq.capacity}h</div></div>
-            <div class="info-item"><div class="label">Horas Usadas</div><div class="value">${fmt.hrs(totalH)}h</div></div>
+            <div class="info-item"><div class="label">Horas Planejadas</div><div class="value">${fmt.hrs(totalPlanned)}h</div></div>
+            <div class="info-item"><div class="label">Horas Realizadas</div><div class="value">${anyActuals?fmt.hrs(totalActual)+'h':'-'}</div></div>
             <div class="info-item"><div class="label">% Livre</div><div class="value" style="color:var(--${bc})">${fmt.pct(Math.max(0,1-u))}</div></div>
-            <div class="info-item" style="flex:1"><div class="label">Utilizacao</div><div class="capacity-bar-container" style="margin-top:8px"><div class="capacity-bar" style="height:12px"><div class="capacity-bar-fill ${bc}" style="width:${Math.min(u*100,100)}%"></div></div><span class="capacity-label" style="font-size:16px">${fmt.pct(u)}</span></div></div>
+            <div class="info-item" style="flex:1"><div class="label">Utilizacao (Planejado/Capacidade)</div><div class="capacity-bar-container" style="margin-top:8px"><div class="capacity-bar" style="height:12px"><div class="capacity-bar-fill ${bc}" style="width:${Math.min(u*100,100)}%"></div></div><span class="capacity-label" style="font-size:16px">${fmt.pct(u)}</span></div></div>
         </div>
         <div class="members-grid">${sq.members.map(m=>`<div class="member-chip"><div class="role">${m.role}</div><div class="name">${m.name}</div><div class="cost">${fmt.brl(m.costPerHour)}/h</div></div>`).join('')}</div>
 
@@ -1020,10 +1038,13 @@ function renderSquads() {
         </div>
 
         <div class="table-container">
-            <div class="table-header"><h3>Capacidade por Funcao</h3></div>
+            <div class="table-header"><h3>Capacidade por Funcao</h3><span style="font-size:12px;color:var(--text-2)">Capacidade = membros da funcao &times; ${sq.capacity}h</span></div>
             <div class="table-wrapper"><table><thead><tr><th>Metrica</th>${ROLES.map(r=>`<th class="r">${r}</th>`).join('')}<th class="r">Total</th></tr></thead><tbody>
-            <tr><td>Horas Alocadas</td>${ROLES.map(r=>`<td class="r">${fmt.hrs(squadTotalByRole(sq.id,r,mk))}</td>`).join('')}<td class="r">${fmt.hrs(totalH)}</td></tr>
-            <tr class="pct-row"><td>% Livre</td>${ROLES.map(r=>{const used=squadTotalByRole(sq.id,r,mk); const sqCapR=squadCapacity(sq.id); const free=sqCapR>0?1-(used/sqCapR):1; return `<td class="r">${fmt.pct(Math.max(0,free))}</td>`;}).join('')}<td class="r">${fmt.pct(Math.max(0,1-u))}</td></tr>
+            <tr><td>Capacidade</td>${ROLES.map(r=>`<td class="r">${fmt.hrs(squadRoleCapacity(sq.id,r))}h</td>`).join('')}<td class="r">${fmt.hrs(squadCapacity(sq.id))}h</td></tr>
+            <tr><td>Horas Planejadas</td>${ROLES.map(r=>`<td class="r">${fmt.hrs(squadPlannedByRole(sq.id,r))}</td>`).join('')}<td class="r">${fmt.hrs(totalPlanned)}</td></tr>
+            ${anyActuals ? `<tr><td>Horas Realizadas</td>${ROLES.map(r=>`<td class="r">${fmt.hrs(squadActualByRole(sq.id,r,mk))}</td>`).join('')}<td class="r">${fmt.hrs(totalActual)}</td></tr>` : ''}
+            <tr class="pct-row"><td>% Utilizacao</td>${ROLES.map(r=>{const planR=squadPlannedByRole(sq.id,r); const capR=squadRoleCapacity(sq.id,r); const ut=capR>0?planR/capR:(planR>0?Infinity:0); const cls=ut>1?'red':ut>0.85?'yellow':'green'; const txt=capR===0&&planR>0?'!':fmt.pct(ut); return `<td class="r" style="color:var(--${cls})">${txt}</td>`;}).join('')}<td class="r" style="color:var(--${bc})">${fmt.pct(u)}</td></tr>
+            <tr class="pct-row"><td>% Livre</td>${ROLES.map(r=>{const planR=squadPlannedByRole(sq.id,r); const capR=squadRoleCapacity(sq.id,r); const free=capR>0?1-(planR/capR):0; return `<td class="r">${capR>0?fmt.pct(Math.max(0,free)):'-'}</td>`;}).join('')}<td class="r">${fmt.pct(Math.max(0,1-u))}</td></tr>
             </tbody></table></div>
         </div>
 
